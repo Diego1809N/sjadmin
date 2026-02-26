@@ -1,14 +1,33 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import Sidebar from "@/components/Sidebar";
+import Topbar from "@/components/Topbar";
+import Dashboard from "@/pages/Dashboard";
+import GenerarCobro from "@/pages/GenerarCobro";
+import Locadores from "@/pages/Locadores";
+import Locatarios from "@/pages/Locatarios";
 
-const Index = () => {
+export default function Index() {
+  const [page, setPage] = useState("dashboard");
+
+  const renderPage = () => {
+    switch (page) {
+      case "dashboard": return <Dashboard onNavigate={setPage} />;
+      case "generar-cobro": return <GenerarCobro />;
+      case "locadores": return <Locadores />;
+      case "locatarios": return <Locatarios />;
+      default: return <Dashboard onNavigate={setPage} />;
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="flex min-h-screen bg-background">
+      <Sidebar currentPage={page} onNavigate={setPage} />
+      <div className="flex-1 md:ml-60 flex flex-col min-h-screen">
+        <Topbar title={page} onCreateReceipt={() => setPage("generar-cobro")} />
+        <main className="flex-1 overflow-auto">
+          {renderPage()}
+        </main>
       </div>
     </div>
   );
-};
-
-export default Index;
+}

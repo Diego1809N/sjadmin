@@ -1,0 +1,23 @@
+export const locadores = [
+  { id: 1, nombre: "Carlos Martínez", dni: "25.432.100", telefono: "351-445-6789", email: "carlos@email.com", propiedades: 3 },
+  { id: 2, nombre: "Ana López", dni: "18.765.432", telefono: "351-234-5678", email: "ana@email.com", propiedades: 2 },
+  { id: 3, nombre: "Roberto Fernández", dni: "30.123.456", telefono: "351-678-9012", email: "roberto@email.com", propiedades: 1 },
+  { id: 4, nombre: "María González", dni: "22.987.654", telefono: "351-345-6789", email: "maria@email.com", propiedades: 4 },
+  { id: 5, nombre: "Jorge Ramírez", dni: "27.654.321", telefono: "351-789-0123", email: "jorge@email.com", propiedades: 2 },
+];
+
+export const locatarios = [
+  { id: 1, nombre: "Laura Pérez", dni: "35.123.789", telefono: "351-555-1234", email: "laura@email.com", propiedad: "Dpto 4B, Sunset Heights", locador: "Carlos Martínez" },
+  { id: 2, nombre: "Diego Silva", dni: "31.456.012", telefono: "351-555-5678", email: "diego@email.com", propiedad: "Local 12, Park View", locador: "Ana López" },
+  { id: 3, nombre: "Sofía Torres", dni: "38.789.345", telefono: "351-555-9012", email: "sofia@email.com", propiedad: "Villa 7, Green Valley", locador: "Roberto Fernández" },
+  { id: 4, nombre: "Martín Castro", dni: "29.012.678", telefono: "351-555-3456", email: "martin@email.com", propiedad: "Dpto 101, City Center", locador: "María González" },
+  { id: 5, nombre: "Valentina Ruiz", dni: "33.345.901", telefono: "351-555-7890", email: "valentina@email.com", propiedad: "Estudio 4, East Side", locador: "Jorge Ramírez" },
+];
+
+export const recibos = [
+  { id: 1, fecha: "24 Oct 2024", locatario: "Laura Pérez", propiedad: "Dpto 4B, Sunset Heights", monto: 85000, estado: "Entregado", iniciales: "LP" },
+  { id: 2, fecha: "23 Oct 2024", locatario: "Diego Silva", propiedad: "Local 12, Park View", monto: 120000, estado: "Pendiente", iniciales: "DS" },
+  { id: 3, fecha: "23 Oct 2024", locatario: "Sofía Torres", propiedad: "Villa 7, Green Valley", monto: 95000, estado: "Entregado", iniciales: "ST" },
+  { id: 4, fecha: "22 Oct 2024", locatario: "Martín Castro", propiedad: "Dpto 101, City Center", monto: 75000, estado: "Entregado", iniciales: "MC" },
+  { id: 5, fecha: "21 Oct 2024", locatario: "Valentina Ruiz", propiedad: "Estudio 4, East Side", monto: 65000, estado: "Pendiente", iniciales: "VR" },
+];
