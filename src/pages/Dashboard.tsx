@@ -1,5 +1,19 @@
-import { Building2, Users, UserCheck, FileText, Eye } from "lucide-react";
-import { recibos } from "@/lib/mockData";
+import { useState } from "react";
+import { Building2, Users, UserCheck, FileText, Eye, Check, X } from "lucide-react";
+
+type Recibo = {
+  id: number;
+  fecha: string;
+  locatario: string;
+  propiedad: string;
+  monto: number;
+  expensas: number;
+  estado: string;
+  fechaEntrega: string;
+  iniciales: string;
+};
+
+import { recibos as initialRecibos } from "@/lib/mockData";
 
 const stats = [
   { label: "Total Propiedades", value: "124", change: "+12%", icon: Building2, bg: "stat-blue", iconColor: "stat-blue-icon" },
@@ -9,13 +23,35 @@ const stats = [
 ];
 
 export default function Dashboard({ onNavigate }: { onNavigate: (p: string) => void }) {
+  const [recibos, setRecibos] = useState<Recibo[]>(initialRecibos);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editFecha, setEditFecha] = useState("");
+
+  const handleToggleEntregado = (r: Recibo) => {
+    if (r.estado === "Pendiente") {
+      setEditingId(r.id);
+      setEditFecha(new Date().toISOString().split("T")[0]);
+    } else {
+      setRecibos((prev) =>
+        prev.map((x) => x.id === r.id ? { ...x, estado: "Pendiente", fechaEntrega: "" } : x)
+      );
+    }
+  };
+
+  const confirmEntrega = (id: number) => {
+    const formatted = new Date(editFecha + "T00:00:00").toLocaleDateString("es-AR", {
+      day: "2-digit", month: "short", year: "numeric",
+    });
+    setRecibos((prev) =>
+      prev.map((x) => x.id === id ? { ...x, estado: "Entregado", fechaEntrega: formatted } : x)
+    );
+    setEditingId(null);
+  };
+
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Resumen</h1>
-        </div>
+        <h1 className="text-2xl font-bold text-foreground">Resumen</h1>
       </div>
 
       {/* Stats */}
@@ -44,12 +80,12 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: string) => v
         })}
       </div>
 
-      {/* Recent Receipts */}
+      {/* Recibos Generados */}
       <div className="bg-card rounded-xl border border-border">
         <div className="flex items-center justify-between px-6 py-5 border-b border-border">
           <div>
-            <h2 className="font-bold text-foreground">Últimos 5 Recibos Generados</h2>
-            <p className="text-sm text-muted-foreground">Lista de las transacciones de alquiler más recientes.</p>
+            <h2 className="font-bold text-foreground">Recibos Generados</h2>
+            <p className="text-sm text-muted-foreground">Últimas transacciones de alquiler.</p>
           </div>
           <button
             onClick={() => onNavigate("generar-cobro")}
@@ -67,7 +103,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: string) => v
                 <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Propiedad</th>
                 <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">Monto</th>
                 <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Estado</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Acciones</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Acción</th>
               </tr>
             </thead>
             <tbody>
@@ -87,16 +123,40 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: string) => v
                     ${r.monto.toLocaleString("es-AR")}
                   </td>
                   <td className="px-6 py-4">
-                    <span
-                      className="text-xs font-semibold px-3 py-1 rounded-full"
-                      style={
-                        r.estado === "Entregado"
-                          ? { background: "hsl(var(--badge-delivered-bg))", color: "hsl(var(--badge-delivered-text))" }
-                          : { background: "hsl(var(--badge-pending-bg))", color: "hsl(var(--badge-pending-text))" }
-                      }
-                    >
-                      {r.estado}
-                    </span>
+                    {editingId === r.id ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="date"
+                          value={editFecha}
+                          onChange={(e) => setEditFecha(e.target.value)}
+                          className="text-xs px-2 py-1 bg-secondary border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary/40"
+                        />
+                        <button onClick={() => confirmEntrega(r.id)} className="p-1 rounded bg-[hsl(var(--badge-delivered-bg))] text-[hsl(var(--badge-delivered-text))]">
+                          <Check className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => setEditingId(null)} className="p-1 rounded bg-secondary text-muted-foreground">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <span
+                          className="text-xs font-semibold px-3 py-1 rounded-full cursor-pointer select-none"
+                          style={
+                            r.estado === "Entregado"
+                              ? { background: "hsl(var(--badge-delivered-bg))", color: "hsl(var(--badge-delivered-text))" }
+                              : { background: "hsl(var(--badge-pending-bg))", color: "hsl(var(--badge-pending-text))" }
+                          }
+                          onClick={() => handleToggleEntregado(r)}
+                          title="Click para cambiar estado"
+                        >
+                          {r.estado}
+                        </span>
+                        {r.estado === "Entregado" && r.fechaEntrega && (
+                          <p className="text-xs text-muted-foreground mt-0.5">{r.fechaEntrega}</p>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     <button className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
