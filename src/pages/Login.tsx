@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Building2 } from "lucide-react";
+import { BadgeDollarSign } from "lucide-react";
 
 interface LoginProps {
   onLogin: () => void;
@@ -24,7 +24,7 @@ export default function Login({ onLogin }: LoginProps) {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mb-4 shadow-lg">
-            <Building2 className="w-7 h-7 text-primary-foreground" />
+            <BadgeDollarSign className="w-7 h-7 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">InmobilAdmin</h1>
           <p className="text-sm text-muted-foreground mt-1">Portal de Gestión Inmobiliaria</p>
@@ -38,11 +38,11 @@ export default function Login({ onLogin }: LoginProps) {
             <input
               type="text"
               value={usuario}
-              onChange={(e) => { setUsuario(e.target.value); setError(""); }}
+              onChange={(e) => {setUsuario(e.target.value);setError("");}}
               required
               placeholder="admin"
-              className="w-full px-3 py-2.5 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
-            />
+              className="w-full px-3 py-2.5 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground" />
+
           </div>
           <div>
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
@@ -51,23 +51,23 @@ export default function Login({ onLogin }: LoginProps) {
             <input
               type="password"
               value={clave}
-              onChange={(e) => { setClave(e.target.value); setError(""); }}
+              onChange={(e) => {setClave(e.target.value);setError("");}}
               required
               placeholder="••••••••"
-              className="w-full px-3 py-2.5 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
-            />
+              className="w-full px-3 py-2.5 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground" />
+
           </div>
-          {error && (
-            <p className="text-xs font-medium text-destructive">{error}</p>
-          )}
+          {error &&
+          <p className="text-xs font-medium text-destructive">{error}</p>
+          }
           <button
             type="submit"
-            className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors"
-          >
+            className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors">
+
             Ingresar
           </button>
         </form>
       </div>
-    </div>
-  );
+    </div>);
+
 }
