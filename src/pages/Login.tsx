@@ -26,7 +26,7 @@ export default function Login({ onLogin }: LoginProps) {
           <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mb-4 shadow-lg">
             <BadgeDollarSign className="w-7 h-7 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">InmobilAdmin</h1>
+          <h1 className="text-2xl font-bold text-foreground">NEGOCIOS INMOBILIARIOS</h1>
           <p className="text-sm text-muted-foreground mt-1">Portal de Gestión Inmobiliaria</p>
         </div>
 
