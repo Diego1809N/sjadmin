@@ -1,4 +1,6 @@
 import { Bell, Search } from "lucide-react";
+import { useState } from "react";
+import NotificationsPanel from "@/components/NotificationsPanel";
 
 interface TopbarProps {
   title: string;
@@ -8,9 +10,10 @@ interface TopbarProps {
 export default function Topbar({ title, onCreateReceipt }: TopbarProps) {
   const now = new Date();
   const time = now.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+  const [notifOpen, setNotifOpen] = useState(false);
 
   return (
-    <header className="h-16 border-b border-border bg-card flex items-center px-6 gap-4">
+    <header className="h-16 border-b border-border bg-card flex items-center px-6 gap-4 relative">
       <div className="flex-1 flex items-center gap-3">
         <div className="relative max-w-md w-full hidden sm:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -31,11 +34,16 @@ export default function Topbar({ title, onCreateReceipt }: TopbarProps) {
           <span className="text-base leading-none">+</span>
           <span className="hidden sm:inline">Crear Recibo</span>
         </button>
-        <button className="relative p-2 rounded-lg hover:bg-secondary transition-colors">
+        <button
+          onClick={() => setNotifOpen((v) => !v)}
+          className="relative p-2 rounded-lg hover:bg-secondary transition-colors"
+        >
           <Bell className="w-4 h-4 text-muted-foreground" />
           <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-destructive rounded-full" />
         </button>
       </div>
+      <NotificationsPanel open={notifOpen} onClose={() => setNotifOpen(false)} />
     </header>
   );
 }
+
