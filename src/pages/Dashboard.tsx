@@ -88,7 +88,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: string) => v
             <p className="text-sm text-muted-foreground">Últimas transacciones de alquiler.</p>
           </div>
           <button
-            onClick={() => onNavigate("generar-cobro")}
+            onClick={() => onNavigate("recibos-generados")}
             className="text-sm font-semibold text-primary hover:underline"
           >
             Ver Todos

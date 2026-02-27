@@ -6,6 +6,7 @@ import GenerarCobro from "@/pages/GenerarCobro";
 import Locadores from "@/pages/Locadores";
 import Locatarios from "@/pages/Locatarios";
 import Login from "@/pages/Login";
+import RecibosGenerados from "@/pages/RecibosGenerados";
 
 export default function Index() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -19,6 +20,7 @@ export default function Index() {
       case "generar-cobro": return <GenerarCobro />;
       case "locadores": return <Locadores />;
       case "locatarios": return <Locatarios />;
+      case "recibos-generados": return <RecibosGenerados />;
       default: return <Dashboard onNavigate={setPage} />;
     }
   };
