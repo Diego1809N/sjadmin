@@ -1,4 +1,4 @@
-import { Bell, Settings, Search } from "lucide-react";
+import { Bell, Search } from "lucide-react";
 
 interface TopbarProps {
   title: string;
@@ -34,9 +34,6 @@ export default function Topbar({ title, onCreateReceipt }: TopbarProps) {
         <button className="relative p-2 rounded-lg hover:bg-secondary transition-colors">
           <Bell className="w-4 h-4 text-muted-foreground" />
           <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-destructive rounded-full" />
-        </button>
-        <button className="p-2 rounded-lg hover:bg-secondary transition-colors">
-          <Settings className="w-4 h-4 text-muted-foreground" />
         </button>
       </div>
     </header>

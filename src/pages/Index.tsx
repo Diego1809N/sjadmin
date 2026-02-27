@@ -5,9 +5,13 @@ import Dashboard from "@/pages/Dashboard";
 import GenerarCobro from "@/pages/GenerarCobro";
 import Locadores from "@/pages/Locadores";
 import Locatarios from "@/pages/Locatarios";
+import Login from "@/pages/Login";
 
 export default function Index() {
+  const [loggedIn, setLoggedIn] = useState(false);
   const [page, setPage] = useState("dashboard");
+
+  if (!loggedIn) return <Login onLogin={() => setLoggedIn(true)} />;
 
   const renderPage = () => {
     switch (page) {

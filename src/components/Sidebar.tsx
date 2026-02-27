@@ -61,7 +61,7 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
           </div>
           <div>
             <p className="text-sm font-semibold text-foreground">Admin General</p>
-            <p className="text-xs text-muted-foreground">Agente Senior</p>
+            
           </div>
         </div>
       </div>
