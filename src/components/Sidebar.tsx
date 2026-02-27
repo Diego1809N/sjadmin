@@ -8,24 +8,24 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "generar-cobro", label: "Generar Cobro", icon: FileText },
-  { id: "locadores", label: "Locadores", icon: UserCheck },
-  { id: "locatarios", label: "Locatarios", icon: Users },
-];
+{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+{ id: "generar-cobro", label: "Generar Cobro", icon: FileText },
+{ id: "locadores", label: "Locadores", icon: UserCheck },
+{ id: "locatarios", label: "Locatarios", icon: Users }];
+
 
 export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
+  const SidebarContent = () =>
+  <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-6 border-b border-sidebar-border">
         <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
           <Building2 className="w-5 h-5 text-primary-foreground" />
         </div>
         <div>
-          <p className="font-bold text-sm text-foreground leading-tight">InmobilAdmin</p>
+          <p className="font-bold text-sm text-foreground leading-tight">NEGOCIOS INMOBILIARIOS</p>
           <p className="text-xs text-muted-foreground">PORTAL DE GESTIÓN</p>
         </div>
       </div>
@@ -33,24 +33,24 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = currentPage === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => { onNavigate(item.id); setMobileOpen(false); }}
-              className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
-                isActive
-                  ? "bg-[hsl(var(--sidebar-active-bg))] text-[hsl(var(--sidebar-active-text))]"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-              )}
-            >
+        const Icon = item.icon;
+        const isActive = currentPage === item.id;
+        return (
+          <button
+            key={item.id}
+            onClick={() => {onNavigate(item.id);setMobileOpen(false);}}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+              isActive ?
+              "bg-[hsl(var(--sidebar-active-bg))] text-[hsl(var(--sidebar-active-text))]" :
+              "text-muted-foreground hover:bg-secondary hover:text-foreground"
+            )}>
+
               <Icon className="w-4 h-4 flex-shrink-0" />
               {item.label}
-            </button>
-          );
-        })}
+            </button>);
+
+      })}
       </nav>
 
       {/* User */}
@@ -65,8 +65,8 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
+
 
   return (
     <>
@@ -78,20 +78,20 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
       {/* Mobile toggle */}
       <button
         className="md:hidden fixed top-4 left-4 z-50 p-2 bg-card rounded-lg border border-border shadow"
-        onClick={() => setMobileOpen(!mobileOpen)}
-      >
+        onClick={() => setMobileOpen(!mobileOpen)}>
+
         {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
 
       {/* Mobile drawer */}
-      {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-40">
+      {mobileOpen &&
+      <div className="md:hidden fixed inset-0 z-40">
           <div className="absolute inset-0 bg-black/30" onClick={() => setMobileOpen(false)} />
           <aside className="absolute left-0 top-0 bottom-0 w-60 bg-card border-r border-sidebar-border">
             <SidebarContent />
           </aside>
         </div>
-      )}
-    </>
-  );
+      }
+    </>);
+
 }
