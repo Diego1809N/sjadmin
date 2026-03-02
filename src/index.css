@@ -75,17 +75,29 @@
 }
 
 @media print {
-  .no-print {
-    display: none !important;
+  /* Hide everything by default */
+  body * {
+    visibility: hidden !important;
+  }
+  /* Only show the print-only area and its children */
+  .print-only,
+  .print-only * {
+    visibility: visible !important;
   }
   .print-only {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 210mm !important;
     display: block !important;
   }
   body {
     background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   @page {
-    size: A4 landscape;
+    size: A4 portrait;
     margin: 10mm;
   }
 }
