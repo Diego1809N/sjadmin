@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Trash2, Download, Check, X } from "lucide-react";
 
 type Recibo = {
@@ -19,9 +19,7 @@ type Recibo = {
   iniciales: string;
 };
 
-// Recibos de los últimos 2 meses (mock)
 const now = new Date();
-const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
 
 const initialRecibos: Recibo[] = [
   { id: 1, nroSerie: "2024-0089", fecha: "24 Oct 2024", locatario: "Laura Pérez", locador: "Carlos Martínez", propiedad: "Dpto 4B, Sunset Heights", monto: 85000, expensas: 5000, periodoDesde: "01/10/2024", periodoHasta: "31/10/2024", vencimiento: "05/10/2024", concepto: "Alquiler mensual", estado: "Entregado", fechaEntrega: "24 Oct 2024", iniciales: "LP" },
@@ -33,20 +31,31 @@ const initialRecibos: Recibo[] = [
   { id: 7, nroSerie: "2024-0085", fecha: "23 Sep 2024", locatario: "Diego Silva", locador: "Ana López", propiedad: "Local 12, Park View", monto: 115000, expensas: 0, periodoDesde: "01/09/2024", periodoHasta: "30/09/2024", vencimiento: "05/09/2024", concepto: "Alquiler mensual", estado: "Entregado", fechaEntrega: "25 Sep 2024", iniciales: "DS" },
 ];
 
+// Month labels for filter tabs
+const getMonthLabel = (offsetFromNow: number) => {
+  const d = new Date(now.getFullYear(), now.getMonth() + offsetFromNow, 1);
+  return d.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+};
+
+const months = [
+  { label: getMonthLabel(-1), offset: -1 },
+  { label: getMonthLabel(0), offset: 0 },
+];
+
 function ReciboImprimible({ recibo }: { recibo: Recibo }) {
   const total = recibo.monto + recibo.expensas;
   const halfContent = (tipo: "ORIGINAL" | "COPIA") => (
-    <div style={{ width: "50%", padding: "16px 20px", boxSizing: "border-box", fontFamily: "Arial, sans-serif", fontSize: "11px" }}>
+    <div style={{ width: "100%", padding: "14px 18px", boxSizing: "border-box", fontFamily: "Arial, sans-serif", fontSize: "11px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #333", paddingBottom: "8px", marginBottom: "10px" }}>
         <div>
-          <div style={{ fontWeight: "bold", fontSize: "13px" }}>Recibo de Alquiler</div>
+          <div style={{ fontWeight: "bold", fontSize: "14px" }}>Recibo de Alquiler</div>
           <div style={{ color: "#666", fontSize: "10px" }}>Nº {recibo.nroSerie}</div>
         </div>
-        <div style={{ background: tipo === "ORIGINAL" ? "#1a1a2e" : "#e2e8f0", color: tipo === "ORIGINAL" ? "white" : "#333", padding: "3px 10px", borderRadius: "4px", fontWeight: "bold", fontSize: "10px" }}>
+        <div style={{ background: tipo === "ORIGINAL" ? "#1a1a2e" : "#e2e8f0", color: tipo === "ORIGINAL" ? "white" : "#333", padding: "4px 12px", borderRadius: "4px", fontWeight: "bold", fontSize: "11px" }}>
           {tipo}
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginBottom: "10px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "7px", marginBottom: "10px" }}>
         <div><span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Locatario</span><br /><strong>{recibo.locatario}</strong></div>
         <div><span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Locador</span><br /><strong>{recibo.locador}</strong></div>
         <div style={{ gridColumn: "span 2" }}><span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Propiedad</span><br /><strong>{recibo.propiedad}</strong></div>
@@ -58,7 +67,7 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
         {recibo.expensas > 0 && <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px" }}><span>Expensas</span><strong>${recibo.expensas.toLocaleString("es-AR")}</strong></div>}
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "2px solid #333", paddingTop: "8px" }}>
-        <strong style={{ fontSize: "13px" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
+        <strong style={{ fontSize: "14px" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
         <div style={{ textAlign: "right", fontSize: "9px", color: "#666" }}>
           <div>Firma:</div>
           <div style={{ borderBottom: "1px solid #333", width: "80px", marginTop: "16px" }}></div>
@@ -68,10 +77,15 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
   );
 
   return (
-    <div id={`recibo-print-${recibo.id}`} style={{ display: "flex", width: "210mm", background: "white" }}>
-      {halfContent("ORIGINAL")}
-      <div style={{ width: "1px", background: "#ccc", margin: "16px 0" }} />
-      {halfContent("COPIA")}
+    <div id={`recibo-print-${recibo.id}`} style={{ display: "flex", flexDirection: "column", width: "210mm", background: "white", pageBreakInside: "avoid" }}>
+      {/* ORIGINAL - top half */}
+      <div style={{ borderBottom: "1px dashed #ccc", paddingBottom: "4px" }}>
+        {halfContent("ORIGINAL")}
+      </div>
+      {/* COPIA - bottom half */}
+      <div style={{ paddingTop: "4px" }}>
+        {halfContent("COPIA")}
+      </div>
     </div>
   );
 }
@@ -81,6 +95,17 @@ export default function RecibosGenerados() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editFecha, setEditFecha] = useState("");
   const [printRecibo, setPrintRecibo] = useState<Recibo | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null); // null = all
+
+  const filtered = useMemo(() => {
+    if (selectedMonth === null) return recibos;
+    const target = new Date(now.getFullYear(), now.getMonth() + selectedMonth, 1);
+    return recibos.filter((r) => {
+      // parse fecha like "24 Oct 2024"
+      const d = new Date(r.fecha);
+      return d.getFullYear() === target.getFullYear() && d.getMonth() === target.getMonth();
+    });
+  }, [recibos, selectedMonth]);
 
   const handleToggleEntregado = (r: Recibo) => {
     if (r.estado === "Pendiente") {
@@ -121,7 +146,26 @@ export default function RecibosGenerados() {
       <div className="p-6 space-y-4 no-print">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Recibos Generados</h1>
-          <p className="text-sm text-muted-foreground">Últimos 2 meses — {recibos.length} recibos</p>
+          <p className="text-sm text-muted-foreground">Últimos 2 meses — {filtered.length} recibos</p>
+        </div>
+
+        {/* Month filter tabs */}
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setSelectedMonth(null)}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${selectedMonth === null ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:bg-secondary"}`}
+          >
+            Todos
+          </button>
+          {months.map((m) => (
+            <button
+              key={m.offset}
+              onClick={() => setSelectedMonth(m.offset)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors capitalize ${selectedMonth === m.offset ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:bg-secondary"}`}
+            >
+              {m.label}
+            </button>
+          ))}
         </div>
 
         <div className="bg-card rounded-xl border border-border overflow-x-auto">
@@ -138,7 +182,7 @@ export default function RecibosGenerados() {
               </tr>
             </thead>
             <tbody>
-              {recibos.map((r) => (
+              {filtered.map((r) => (
                 <tr key={r.id} className="border-b border-border last:border-0 hover:bg-secondary/50 transition-colors">
                   <td className="px-5 py-3 text-xs font-mono text-muted-foreground">#{r.nroSerie}</td>
                   <td className="px-5 py-3 text-sm text-muted-foreground">{r.fecha}</td>
@@ -202,10 +246,10 @@ export default function RecibosGenerados() {
                   </td>
                 </tr>
               ))}
-              {recibos.length === 0 && (
+              {filtered.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground text-sm">
-                    No hay recibos en los últimos 2 meses.
+                    No hay recibos para este período.
                   </td>
                 </tr>
               )}
