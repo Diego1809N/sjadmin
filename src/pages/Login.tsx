@@ -23,8 +23,8 @@ export default function Login({ onLogin }: LoginProps) {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center mb-4 shadow-lg overflow-hidden">
-            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain p-2" onError={(e) => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).parentElement!.innerHTML = '<span style="color:white;font-weight:bold;font-size:22px">NI</span>'; }} />
+          <div className="w-24 h-24 mb-4 flex items-center justify-center">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">NEGOCIOS INMOBILIARIOS</h1>
           <p className="text-sm text-muted-foreground mt-1">Portal de Gestión Inmobiliaria</p>

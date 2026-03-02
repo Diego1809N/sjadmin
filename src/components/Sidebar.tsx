@@ -21,8 +21,8 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
   <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-6 border-b border-sidebar-border">
-        <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center flex-shrink-0 overflow-hidden">
-          <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).parentElement!.innerHTML = '<span style="color:white;font-weight:bold;font-size:14px">NI</span>'; }} />
+        <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+          <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
         </div>
         <div>
           <p className="font-bold text-sm text-foreground leading-tight">NEGOCIOS INMOBILIARIOS</p>
