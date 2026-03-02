@@ -44,46 +44,62 @@ const months = [
 
 function ReciboImprimible({ recibo }: { recibo: Recibo }) {
   const total = recibo.monto + recibo.expensas;
+  // Each receipt = half of A4 page (297mm / 2 = 148mm) minus margins (10mm top+bottom = 20mm total -> 148mm - 10mm = 138mm)
   const halfContent = (tipo: "ORIGINAL" | "COPIA") => (
-    <div style={{ width: "100%", padding: "14px 18px", boxSizing: "border-box", fontFamily: "Arial, sans-serif", fontSize: "11px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #333", paddingBottom: "8px", marginBottom: "10px" }}>
+    <div style={{
+      width: "190mm",
+      height: "128mm",
+      padding: "10mm 12mm",
+      boxSizing: "border-box",
+      fontFamily: "Arial, sans-serif",
+      fontSize: "11px",
+      background: "white",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "space-between",
+    }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #333", paddingBottom: "6px", marginBottom: "8px" }}>
         <div>
-          <div style={{ fontWeight: "bold", fontSize: "14px" }}>Recibo de Alquiler</div>
+          <div style={{ fontWeight: "bold", fontSize: "15px" }}>Recibo de Alquiler</div>
           <div style={{ color: "#666", fontSize: "10px" }}>Nº {recibo.nroSerie}</div>
         </div>
-        <div style={{ background: tipo === "ORIGINAL" ? "#1a1a2e" : "#e2e8f0", color: tipo === "ORIGINAL" ? "white" : "#333", padding: "4px 12px", borderRadius: "4px", fontWeight: "bold", fontSize: "11px" }}>
+        <div style={{ background: tipo === "ORIGINAL" ? "#1a1a2e" : "#e2e8f0", color: tipo === "ORIGINAL" ? "white" : "#333", padding: "4px 14px", borderRadius: "4px", fontWeight: "bold", fontSize: "12px" }}>
           {tipo}
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "7px", marginBottom: "10px" }}>
+      {/* Fields */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "7px", marginBottom: "8px", flex: 1 }}>
         <div><span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Locatario</span><br /><strong>{recibo.locatario}</strong></div>
-        <div><span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Locador</span><br /><strong>{recibo.locador}</strong></div>
+        <div><span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Fecha</span><br /><strong>{recibo.fecha}</strong></div>
         <div style={{ gridColumn: "span 2" }}><span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Propiedad</span><br /><strong>{recibo.propiedad}</strong></div>
         <div><span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Período</span><br /><strong>{recibo.periodoDesde} → {recibo.periodoHasta}</strong></div>
         <div><span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Vencimiento</span><br /><strong>{recibo.vencimiento || "—"}</strong></div>
       </div>
-      <div style={{ background: "#f8f8f8", borderRadius: "6px", padding: "8px 10px", marginBottom: "8px" }}>
+      {/* Amounts */}
+      <div style={{ background: "#f4f4f4", borderRadius: "5px", padding: "6px 10px", marginBottom: "8px" }}>
         <div style={{ display: "flex", justifyContent: "space-between" }}><span>{recibo.concepto}</span><strong>${recibo.monto.toLocaleString("es-AR")}</strong></div>
-        {recibo.expensas > 0 && <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px" }}><span>Expensas</span><strong>${recibo.expensas.toLocaleString("es-AR")}</strong></div>}
+        {recibo.expensas > 0 && <div style={{ display: "flex", justifyContent: "space-between", marginTop: "3px" }}><span>Expensas</span><strong>${recibo.expensas.toLocaleString("es-AR")}</strong></div>}
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "2px solid #333", paddingTop: "8px" }}>
+      {/* Total + Firma */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderTop: "2px solid #333", paddingTop: "6px" }}>
         <strong style={{ fontSize: "14px" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
         <div style={{ textAlign: "right", fontSize: "9px", color: "#666" }}>
           <div>Firma:</div>
-          <div style={{ borderBottom: "1px solid #333", width: "80px", marginTop: "16px" }}></div>
+          <div style={{ borderBottom: "1px solid #333", width: "80px", marginTop: "18px" }}></div>
         </div>
       </div>
     </div>
   );
 
   return (
-    <div id={`recibo-print-${recibo.id}`} style={{ display: "flex", flexDirection: "column", width: "210mm", background: "white", pageBreakInside: "avoid" }}>
+    <div id={`recibo-print-${recibo.id}`} style={{ width: "190mm", background: "white" }}>
       {/* ORIGINAL - top half */}
-      <div style={{ borderBottom: "1px dashed #ccc", paddingBottom: "4px" }}>
+      <div style={{ borderBottom: "1px dashed #aaa" }}>
         {halfContent("ORIGINAL")}
       </div>
       {/* COPIA - bottom half */}
-      <div style={{ paddingTop: "4px" }}>
+      <div>
         {halfContent("COPIA")}
       </div>
     </div>
