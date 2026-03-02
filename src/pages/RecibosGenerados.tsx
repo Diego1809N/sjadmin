@@ -44,11 +44,11 @@ const months = [
 
 function ReciboImprimible({ recibo }: { recibo: Recibo }) {
   const total = recibo.monto + recibo.expensas;
-  // Each receipt = half of A4 page (297mm / 2 = 148mm) minus margins (10mm top+bottom = 20mm total -> 148mm - 10mm = 138mm)
+  // 2 receipts together = half A4 = ~138mm usable → each = 64mm
   const halfContent = (tipo: "ORIGINAL" | "COPIA") => (
     <div style={{
       width: "190mm",
-      height: "128mm",
+      height: "64mm",
       padding: "10mm 12mm",
       boxSizing: "border-box",
       fontFamily: "Arial, sans-serif",
