@@ -112,10 +112,10 @@ export default function GenerarCobro() {
       </div>
     );
 
-    // Each receipt = ~128mm together (half of A4 usable ~257mm) → each = 128mm / 2 = 64mm
+    // 2 recibos juntos = mitad de A4 (~128mm) → cada uno = 60mm
     const halfContent = (tipo: "ORIGINAL" | "COPIA") => (
       <div style={{
-        width: "190mm", height: "120mm", padding: "6mm 12mm",
+        width: "190mm", height: "60mm", padding: "3mm 10mm",
         boxSizing: "border-box", fontFamily: "Arial, sans-serif", fontSize: "11px",
         background: "white", display: "flex", flexDirection: "column", justifyContent: "space-between",
       }}>

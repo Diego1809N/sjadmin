@@ -76,8 +76,8 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
   const halfContent = (tipo: "ORIGINAL" | "COPIA") => (
     <div style={{
       width: "190mm",
-      height: "120mm",
-      padding: "6mm 12mm",
+      height: "60mm",
+      padding: "3mm 10mm",
       boxSizing: "border-box",
       fontFamily: "Arial, sans-serif",
       fontSize: "11px",
