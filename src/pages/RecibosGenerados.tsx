@@ -130,7 +130,7 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
   );
 
   return (
-    <div id={`recibo-print-${recibo.id}`} style={{ width: "190mm", background: "white" }}>
+    <div id={`recibo-print-${recibo.id}`} style={{ width: "210mm", background: "white" }}>
       {halfContent("ORIGINAL")}
       <CutLine />
       {halfContent("COPIA")}
