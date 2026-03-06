@@ -94,35 +94,47 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
       fontSize: "11px",
       background: "white",
       display: "flex",
-      flexDirection: "column",
-      justifyContent: "space-between",
+      flexDirection: "row",
+      gap: "0",
     }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #333", paddingBottom: "6px" }}>
-        <div>
-          <div style={{ fontWeight: "bold", fontSize: "15px" }}>Recibo de Alquiler</div>
-          <div style={{ color: "#666", fontSize: "10px" }}>Nº {recibo.nroSerie}</div>
+      {/* Main content */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", paddingRight: "8mm" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1.5px solid #333", paddingBottom: "4px" }}>
+          <div>
+            <div style={{ fontWeight: "bold", fontSize: "14px" }}>Recibo de Alquiler</div>
+            <div style={{ color: "#666", fontSize: "9px" }}>Nº {recibo.nroSerie}</div>
+          </div>
+          <div style={{ background: tipo === "ORIGINAL" ? "#1a1a2e" : "#e2e8f0", color: tipo === "ORIGINAL" ? "white" : "#333", padding: "4px 14px", borderRadius: "4px", fontWeight: "bold", fontSize: "11px" }}>
+            {tipo}
+          </div>
         </div>
-        <div style={{ background: tipo === "ORIGINAL" ? "#1a1a2e" : "#e2e8f0", color: tipo === "ORIGINAL" ? "white" : "#333", padding: "4px 14px", borderRadius: "4px", fontWeight: "bold", fontSize: "12px" }}>
-          {tipo}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "5px", flex: 1, alignContent: "start", paddingTop: "5px" }}>
+          <div><span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Locatario</span><br /><strong style={{ fontSize: "11px" }}>{recibo.locatario}</strong></div>
+          <div><span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Período</span><br /><strong style={{ fontSize: "11px" }}>{fmtDate(recibo.periodoDesde)} → {fmtDate(recibo.periodoHasta)}</strong></div>
+          <div><span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Vencimiento</span><br /><strong style={{ fontSize: "11px" }}>{fmtDate(recibo.vencimiento)}</strong></div>
+          <div style={{ gridColumn: "span 3" }}><span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Propiedad</span><br /><strong style={{ fontSize: "11px" }}>{recibo.propiedad}</strong></div>
+        </div>
+        <div style={{ background: "#f4f4f4", borderRadius: "4px", padding: "5px 10px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span>{recibo.concepto}</span><strong>${recibo.monto.toLocaleString("es-AR")}</strong></div>
+          {recibo.expensas > 0 && <div style={{ display: "flex", justifyContent: "space-between", marginTop: "3px" }}><span>Expensas</span><strong>${recibo.expensas.toLocaleString("es-AR")}</strong></div>}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderTop: "1.5px solid #333", paddingTop: "4px" }}>
+          <strong style={{ fontSize: "13px" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
+          <div style={{ textAlign: "right", fontSize: "8px", color: "#666" }}>
+            <div>Firma:</div>
+            <div style={{ borderBottom: "1px solid #333", width: "80px", marginTop: "14px" }}></div>
+          </div>
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "7px", flex: 1, alignContent: "start", paddingTop: "6px" }}>
-        <div><span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Locatario</span><br /><strong>{recibo.locatario}</strong></div>
-        <div><span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Fecha</span><br /><strong>{fmtDate(recibo.fecha)}</strong></div>
-        <div style={{ gridColumn: "span 2" }}><span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Propiedad</span><br /><strong>{recibo.propiedad}</strong></div>
-        <div><span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Período</span><br /><strong>{fmtDate(recibo.periodoDesde)} → {fmtDate(recibo.periodoHasta)}</strong></div>
-        <div><span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Vencimiento</span><br /><strong>{fmtDate(recibo.vencimiento)}</strong></div>
-      </div>
-      <div style={{ background: "#f4f4f4", borderRadius: "5px", padding: "6px 10px", marginBottom: "6px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between" }}><span>{recibo.concepto}</span><strong>${recibo.monto.toLocaleString("es-AR")}</strong></div>
-        {recibo.expensas > 0 && <div style={{ display: "flex", justifyContent: "space-between", marginTop: "3px" }}><span>Expensas</span><strong>${recibo.expensas.toLocaleString("es-AR")}</strong></div>}
-      </div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderTop: "2px solid #333", paddingTop: "6px" }}>
-        <strong style={{ fontSize: "14px" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
-        <div style={{ textAlign: "right", fontSize: "9px", color: "#666" }}>
-          <div>Firma:</div>
-          <div style={{ borderBottom: "1px solid #333", width: "80px", marginTop: "18px" }}></div>
-        </div>
+      {/* Right strip: date */}
+      <div style={{
+        width: "22mm", borderLeft: "1.5px dashed #ccc",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        gap: "6px", padding: "4px 3mm",
+      }}>
+        <div style={{ fontSize: "8px", color: "#888", textTransform: "uppercase", textAlign: "center", letterSpacing: "0.5px" }}>Fecha</div>
+        <div style={{ fontSize: "13px", fontWeight: "bold", color: "#222", letterSpacing: "1px", textAlign: "center" }}>{fechaConDiaBlanco}</div>
+        <div style={{ fontSize: "8px", color: "#888", textTransform: "capitalize", textAlign: "center", marginTop: "4px" }}>{mesLabel}</div>
       </div>
     </div>
   );
