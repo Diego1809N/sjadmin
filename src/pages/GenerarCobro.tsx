@@ -169,7 +169,7 @@ export default function GenerarCobro() {
       <>
         {/* Print-only area */}
         <div className="print-only">
-          <div style={{ width: "190mm", background: "white" }}>
+          <div style={{ width: "210mm", background: "white" }}>
             {halfContent("ORIGINAL")}
             {cutLine}
             {halfContent("COPIA")}
