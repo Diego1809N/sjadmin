@@ -73,11 +73,22 @@ const CutLine = () => (
 function ReciboImprimible({ recibo }: { recibo: Recibo }) {
   const total = recibo.monto + recibo.expensas;
 
+  // Derive month/year from recibo.fecha (dd/mm/yyyy)
+  const fechaParts = recibo.fecha.split("/");
+  let mesNum = "??", anioNum = "????", mesLabel = "";
+  if (fechaParts.length === 3) {
+    mesNum = fechaParts[1];
+    anioNum = fechaParts[2];
+    const d = new Date(Number(fechaParts[2]), Number(fechaParts[1]) - 1, 1);
+    mesLabel = d.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+  }
+  const fechaConDiaBlanco = `__/${mesNum}/${anioNum}`;
+
   const halfContent = (tipo: "ORIGINAL" | "COPIA") => (
     <div style={{
       width: "190mm",
-      height: "60mm",
-      padding: "3mm 10mm",
+      height: "65mm",
+      padding: "3mm 0mm 3mm 10mm",
       boxSizing: "border-box",
       fontFamily: "Arial, sans-serif",
       fontSize: "11px",
