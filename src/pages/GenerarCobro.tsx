@@ -100,7 +100,7 @@ export default function GenerarCobro() {
     // Cut line separator
     const cutLine = (
       <div style={{
-        width: "100%", borderTop: "1.5px dashed #aaa",
+        width: "210mm", borderTop: "1.5px dashed #aaa",
         position: "relative", margin: "0",
       }}>
         <span style={{
@@ -108,7 +108,7 @@ export default function GenerarCobro() {
           transform: "translateX(-50%)",
           fontSize: "9px", color: "#aaa", background: "white",
           padding: "0 6px", letterSpacing: "2px",
-        }}>✂ - - - - - - - - - - - - - - - - - - - - - - - - ✂</span>
+        }}>✂ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ✂</span>
       </div>
     );
 

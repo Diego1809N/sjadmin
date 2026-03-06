@@ -61,12 +61,12 @@ const months = [
 
 // Cut line component
 const CutLine = () => (
-  <div style={{ width: "190mm", borderTop: "1.5px dashed #aaa", position: "relative", margin: "0" }}>
+  <div style={{ width: "210mm", borderTop: "1.5px dashed #aaa", position: "relative", margin: "0" }}>
     <span style={{
       position: "absolute", left: "50%", top: "-9px",
       transform: "translateX(-50%)", fontSize: "9px", color: "#aaa",
       background: "white", padding: "0 6px", letterSpacing: "2px",
-    }}>✂ - - - - - - - - - - - - - - - - - - - - - - - - ✂</span>
+    }}>✂ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ✂</span>
   </div>
 );
 
