@@ -14,13 +14,235 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      locadores: {
+        Row: {
+          created_at: string
+          direccion: string | null
+          dni: string | null
+          email: string | null
+          id: string
+          nombre: string
+          notas: string | null
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          direccion?: string | null
+          dni?: string | null
+          email?: string | null
+          id?: string
+          nombre: string
+          notas?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          direccion?: string | null
+          dni?: string | null
+          email?: string | null
+          id?: string
+          nombre?: string
+          notas?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      locatario_propiedades: {
+        Row: {
+          id: string
+          locatario_id: string
+          propiedad_id: string
+        }
+        Insert: {
+          id?: string
+          locatario_id: string
+          propiedad_id: string
+        }
+        Update: {
+          id?: string
+          locatario_id?: string
+          propiedad_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locatario_propiedades_locatario_id_fkey"
+            columns: ["locatario_id"]
+            isOneToOne: false
+            referencedRelation: "locatarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "locatario_propiedades_propiedad_id_fkey"
+            columns: ["propiedad_id"]
+            isOneToOne: false
+            referencedRelation: "propiedades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      locatarios: {
+        Row: {
+          created_at: string
+          dni: string | null
+          email: string | null
+          fecha_fin: string | null
+          fecha_inicio: string | null
+          id: string
+          indice_actualizacion: string | null
+          intervalo_ajuste_meses: number | null
+          monto_base: number
+          nombre: string
+          notas: string | null
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dni?: string | null
+          email?: string | null
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          indice_actualizacion?: string | null
+          intervalo_ajuste_meses?: number | null
+          monto_base?: number
+          nombre: string
+          notas?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dni?: string | null
+          email?: string | null
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          indice_actualizacion?: string | null
+          intervalo_ajuste_meses?: number | null
+          monto_base?: number
+          nombre?: string
+          notas?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      propiedades: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          direccion: string
+          id: string
+          locador_id: string | null
+          tipo: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          direccion: string
+          id?: string
+          locador_id?: string | null
+          tipo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          direccion?: string
+          id?: string
+          locador_id?: string | null
+          tipo?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "propiedades_locador_id_fkey"
+            columns: ["locador_id"]
+            isOneToOne: false
+            referencedRelation: "locadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recibos: {
+        Row: {
+          concepto: string | null
+          created_at: string
+          estado: string
+          expensas: number
+          fecha: string
+          fecha_entrega: string | null
+          id: string
+          locador_nombre: string | null
+          locatario_id: string | null
+          locatario_nombre: string
+          monto: number
+          nro_serie: string
+          periodo_desde: string | null
+          periodo_hasta: string | null
+          propiedad: string
+          updated_at: string
+          vencimiento: string | null
+        }
+        Insert: {
+          concepto?: string | null
+          created_at?: string
+          estado?: string
+          expensas?: number
+          fecha?: string
+          fecha_entrega?: string | null
+          id?: string
+          locador_nombre?: string | null
+          locatario_id?: string | null
+          locatario_nombre: string
+          monto?: number
+          nro_serie: string
+          periodo_desde?: string | null
+          periodo_hasta?: string | null
+          propiedad: string
+          updated_at?: string
+          vencimiento?: string | null
+        }
+        Update: {
+          concepto?: string | null
+          created_at?: string
+          estado?: string
+          expensas?: number
+          fecha?: string
+          fecha_entrega?: string | null
+          id?: string
+          locador_nombre?: string | null
+          locatario_id?: string | null
+          locatario_nombre?: string
+          monto?: number
+          nro_serie?: string
+          periodo_desde?: string | null
+          periodo_hasta?: string | null
+          propiedad?: string
+          updated_at?: string
+          vencimiento?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recibos_locatario_id_fkey"
+            columns: ["locatario_id"]
+            isOneToOne: false
+            referencedRelation: "locatarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      next_nro_serie: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
