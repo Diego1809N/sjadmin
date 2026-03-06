@@ -100,7 +100,7 @@ export default function GenerarCobro() {
     // Cut line separator
     const cutLine = (
       <div style={{
-        width: "100%", borderTop: "1.5px dashed #aaa",
+        width: "210mm", borderTop: "1.5px dashed #aaa",
         position: "relative", margin: "0",
       }}>
         <span style={{
@@ -108,7 +108,7 @@ export default function GenerarCobro() {
           transform: "translateX(-50%)",
           fontSize: "9px", color: "#aaa", background: "white",
           padding: "0 6px", letterSpacing: "2px",
-        }}>✂ - - - - - - - - - - - - - - - - - - - - - - - - ✂</span>
+        }}>✂ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ✂</span>
       </div>
     );
 
@@ -119,51 +119,48 @@ export default function GenerarCobro() {
     const anioNum = now.getFullYear();
     const fechaConDiaBlanco = `__/${mesNum}/${anioNum}`;
 
-    // 2 recibos juntos = mitad de A4 (~130mm) → cada uno = 65mm
+    // 2 recibos juntos = mitad de A4 (~130mm) → cada uno = 65mm, ancho completo A4
     const halfContent = (tipo: "ORIGINAL" | "COPIA") => (
       <div style={{
-        width: "190mm", height: "65mm", padding: "3mm 0mm 3mm 10mm",
+        width: "210mm", height: "65mm", padding: "4mm 10mm",
         boxSizing: "border-box", fontFamily: "Arial, sans-serif", fontSize: "11px",
-        background: "white", display: "flex", flexDirection: "row", gap: "0",
+        background: "white", display: "flex", flexDirection: "column", justifyContent: "space-between",
       }}>
-        {/* Main content */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", paddingRight: "8mm" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1.5px solid #333", paddingBottom: "4px" }}>
-            <div>
-              <div style={{ fontWeight: "bold", fontSize: "14px" }}>Recibo de Alquiler</div>
-              <div style={{ color: "#666", fontSize: "9px" }}>Nº 2024-0089</div>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1.5px solid #333", paddingBottom: "4px" }}>
+          <div>
+            <div style={{ fontWeight: "bold", fontSize: "14px" }}>Recibo de Alquiler</div>
+            <div style={{ color: "#666", fontSize: "9px" }}>Nº 2024-0089</div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ fontSize: "9px", color: "#666", textAlign: "right" }}>
+              <span style={{ textTransform: "uppercase", letterSpacing: "0.5px" }}>Fecha de pago</span><br />
+              <strong style={{ fontSize: "12px", color: "#222" }}>{fechaConDiaBlanco}</strong>
+              <span style={{ display: "block", fontSize: "8px", textTransform: "capitalize", color: "#888" }}>{mesAnio}</span>
             </div>
             <div style={{ background: tipo === "ORIGINAL" ? "#1a1a2e" : "#e2e8f0", color: tipo === "ORIGINAL" ? "white" : "#333", padding: "4px 14px", borderRadius: "4px", fontWeight: "bold", fontSize: "11px" }}>
               {tipo}
             </div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "5px", flex: 1, alignContent: "start", paddingTop: "5px" }}>
-            <div><span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Locatario</span><br /><strong style={{ fontSize: "11px" }}>{form.locatario}</strong></div>
-            <div><span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Período</span><br /><strong style={{ fontSize: "11px" }}>{fmtDate(form.periodoDesde)} → {fmtDate(form.periodoHasta)}</strong></div>
-            <div><span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Vencimiento</span><br /><strong style={{ fontSize: "11px" }}>{fmtDate(form.vencimiento)}</strong></div>
-            <div style={{ gridColumn: "span 3" }}><span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Propiedad</span><br /><strong style={{ fontSize: "11px" }}>{form.propiedad}</strong></div>
-          </div>
-          <div style={{ background: "#f4f4f4", borderRadius: "4px", padding: "5px 10px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}><span>{form.concepto}</span><strong>${monto.toLocaleString("es-AR")}</strong></div>
-            {expensas > 0 && <div style={{ display: "flex", justifyContent: "space-between", marginTop: "3px" }}><span>Expensas</span><strong>${expensas.toLocaleString("es-AR")}</strong></div>}
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderTop: "1.5px solid #333", paddingTop: "4px" }}>
-            <strong style={{ fontSize: "13px" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
-            <div style={{ textAlign: "right", fontSize: "8px", color: "#666" }}>
-              <div>Firma:</div>
-              <div style={{ borderBottom: "1px solid #333", width: "80px", marginTop: "14px" }}></div>
-            </div>
-          </div>
         </div>
-        {/* Right strip: date + month/year */}
-        <div style={{
-          width: "22mm", borderLeft: "1.5px dashed #ccc",
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          gap: "6px", padding: "4px 3mm",
-        }}>
-          <div style={{ fontSize: "8px", color: "#888", textTransform: "uppercase", textAlign: "center", letterSpacing: "0.5px" }}>Fecha</div>
-          <div style={{ fontSize: "13px", fontWeight: "bold", color: "#222", letterSpacing: "1px", textAlign: "center" }}>{fechaConDiaBlanco}</div>
-          <div style={{ fontSize: "8px", color: "#888", textTransform: "capitalize", textAlign: "center", marginTop: "4px" }}>{mesAnio}</div>
+        {/* Fields */}
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 2fr 1.5fr 1.5fr", gap: "5px 12px", flex: 1, alignContent: "start", paddingTop: "5px" }}>
+          <div><span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Locatario</span><br /><strong style={{ fontSize: "11px" }}>{form.locatario}</strong></div>
+          <div style={{ gridColumn: "span 2" }}><span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Propiedad</span><br /><strong style={{ fontSize: "11px" }}>{form.propiedad}</strong></div>
+          <div><span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Vencimiento</span><br /><strong style={{ fontSize: "11px" }}>{fmtDate(form.vencimiento)}</strong></div>
+          <div style={{ gridColumn: "span 2" }}><span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Período</span><br /><strong style={{ fontSize: "11px" }}>{fmtDate(form.periodoDesde)} al {fmtDate(form.periodoHasta)}</strong></div>
+        </div>
+        {/* Footer */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1.5px solid #333", paddingTop: "5px" }}>
+          <div style={{ background: "#f4f4f4", borderRadius: "4px", padding: "4px 10px", flex: 1, marginRight: "10mm" }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ fontSize: "10px" }}>{form.concepto}</span><strong style={{ fontSize: "10px" }}>${monto.toLocaleString("es-AR")}</strong></div>
+            {expensas > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ fontSize: "10px" }}>Expensas</span><strong style={{ fontSize: "10px" }}>${expensas.toLocaleString("es-AR")}</strong></div>}
+          </div>
+          <strong style={{ fontSize: "14px", whiteSpace: "nowrap" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
+          <div style={{ textAlign: "right", fontSize: "8px", color: "#666", marginLeft: "10mm" }}>
+            <div>Firma:</div>
+            <div style={{ borderBottom: "1px solid #333", width: "70px", marginTop: "12px" }}></div>
+          </div>
         </div>
       </div>
     );
@@ -172,7 +169,7 @@ export default function GenerarCobro() {
       <>
         {/* Print-only area */}
         <div className="print-only">
-          <div style={{ width: "190mm", background: "white" }}>
+          <div style={{ width: "210mm", background: "white" }}>
             {halfContent("ORIGINAL")}
             {cutLine}
             {halfContent("COPIA")}
