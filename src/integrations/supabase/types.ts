@@ -52,18 +52,36 @@ export type Database = {
       }
       locatario_propiedades: {
         Row: {
+          fecha_fin: string | null
+          fecha_inicio: string | null
           id: string
+          indice_actualizacion: string | null
+          intervalo_ajuste_meses: number | null
           locatario_id: string
+          monto_base: number
+          notas: string | null
           propiedad_id: string
         }
         Insert: {
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
           id?: string
+          indice_actualizacion?: string | null
+          intervalo_ajuste_meses?: number | null
           locatario_id: string
+          monto_base?: number
+          notas?: string | null
           propiedad_id: string
         }
         Update: {
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
           id?: string
+          indice_actualizacion?: string | null
+          intervalo_ajuste_meses?: number | null
           locatario_id?: string
+          monto_base?: number
+          notas?: string | null
           propiedad_id?: string
         }
         Relationships: [
@@ -171,59 +189,74 @@ export type Database = {
       }
       recibos: {
         Row: {
+          agua: number
+          arreglos: number
           concepto: string | null
           created_at: string
           estado: string
           expensas: number
           fecha: string
           fecha_entrega: string | null
+          gas: number
           id: string
           locador_nombre: string | null
           locatario_id: string | null
           locatario_nombre: string
+          luz: number
           monto: number
           nro_serie: string
           periodo_desde: string | null
           periodo_hasta: string | null
           propiedad: string
+          servicios: number
           updated_at: string
           vencimiento: string | null
         }
         Insert: {
+          agua?: number
+          arreglos?: number
           concepto?: string | null
           created_at?: string
           estado?: string
           expensas?: number
           fecha?: string
           fecha_entrega?: string | null
+          gas?: number
           id?: string
           locador_nombre?: string | null
           locatario_id?: string | null
           locatario_nombre: string
+          luz?: number
           monto?: number
           nro_serie: string
           periodo_desde?: string | null
           periodo_hasta?: string | null
           propiedad: string
+          servicios?: number
           updated_at?: string
           vencimiento?: string | null
         }
         Update: {
+          agua?: number
+          arreglos?: number
           concepto?: string | null
           created_at?: string
           estado?: string
           expensas?: number
           fecha?: string
           fecha_entrega?: string | null
+          gas?: number
           id?: string
           locador_nombre?: string | null
           locatario_id?: string | null
           locatario_nombre?: string
+          luz?: number
           monto?: number
           nro_serie?: string
           periodo_desde?: string | null
           periodo_hasta?: string | null
           propiedad?: string
+          servicios?: number
           updated_at?: string
           vencimiento?: string | null
         }
