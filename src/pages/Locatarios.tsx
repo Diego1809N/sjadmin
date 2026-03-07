@@ -1,103 +1,257 @@
 import { useState, useMemo } from "react";
-import { locatarios as initialLocatarios, propiedades, locadores } from "@/lib/mockData";
-import { Users, Pencil, X, Trash2, Bell, Search } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Users, Pencil, X, Trash2, Bell, Search, Loader2 } from "lucide-react";
 
 type Locatario = {
-  id: number;
+  id: string;
   nombre: string;
-  dni: string;
-  telefono: string;
-  email: string;
-  propiedadIds: number[];
-  locadorId: number;
-  inicioAlquiler: string;
-  finAlquiler: string;
-  montoBase: number;
-  ajusteMeses: number;
-  indiceAjuste: string;
+  dni: string | null;
+  telefono: string | null;
+  email: string | null;
+  notas: string | null;
+};
+
+type Propiedad = {
+  id: string;
+  direccion: string;
+  locador_id: string | null;
+  locadores?: { nombre: string } | null;
+};
+
+type LocatarioProp = {
+  id: string;
+  locatario_id: string;
+  propiedad_id: string;
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  monto_base: number;
+  intervalo_ajuste_meses: number | null;
+  indice_actualizacion: string | null;
+  notas: string | null;
+};
+
+type LocatarioConProps = Locatario & {
+  locatario_propiedades: (LocatarioProp & { propiedades?: Propiedad | null })[];
 };
 
 const INDICES = ["IPC", "ICL", "CVS", "IRM", "Acuerdo de partes"];
 
-function getUpcomingAdjustments(locatarios: Locatario[]) {
+type PropForm = {
+  propiedad_id: string;
+  fecha_inicio: string;
+  fecha_fin: string;
+  monto_base: number;
+  intervalo_ajuste_meses: number;
+  indice_actualizacion: string;
+  notas: string;
+};
+
+const emptyForm = {
+  nombre: "", dni: "", telefono: "", email: "", notas: "",
+};
+
+const emptyPropForm: PropForm = {
+  propiedad_id: "",
+  fecha_inicio: "",
+  fecha_fin: "",
+  monto_base: 0,
+  intervalo_ajuste_meses: 3,
+  indice_actualizacion: "ICL",
+  notas: "",
+};
+
+function getUpcomingAdjustments(locatarios: LocatarioConProps[]) {
   const now = new Date();
   const oneMonthAhead = new Date(now);
   oneMonthAhead.setMonth(oneMonthAhead.getMonth() + 1);
   return locatarios.filter((l) => {
-    if (!l.inicioAlquiler || !l.ajusteMeses) return false;
-    const inicio = new Date(l.inicioAlquiler);
-    let next = new Date(inicio);
-    while (next <= now) next.setMonth(next.getMonth() + l.ajusteMeses);
-    return next <= oneMonthAhead;
+    return l.locatario_propiedades.some((lp) => {
+      if (!lp.fecha_inicio || !lp.intervalo_ajuste_meses) return false;
+      const inicio = new Date(lp.fecha_inicio);
+      let next = new Date(inicio);
+      while (next <= now) next.setMonth(next.getMonth() + lp.intervalo_ajuste_meses);
+      return next <= oneMonthAhead;
+    });
   });
 }
 
-const emptyForm: Omit<Locatario, "id"> = {
-  nombre: "", dni: "", telefono: "", email: "",
-  propiedadIds: [], locadorId: 0,
-  inicioAlquiler: "", finAlquiler: "",
-  montoBase: 0, ajusteMeses: 3, indiceAjuste: "IPC",
-};
-
 export default function Locatarios() {
-  const [locatarios, setLocatarios] = useState<Locatario[]>(initialLocatarios);
-  const [editing, setEditing] = useState<Locatario | null>(null);
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState<LocatarioConProps | null>(null);
   const [isNew, setIsNew] = useState(false);
-  const [form, setForm] = useState<Omit<Locatario, "id">>(emptyForm);
+  const [form, setForm] = useState(emptyForm);
   const [search, setSearch] = useState("");
+  const [propForms, setPropForms] = useState<PropForm[]>([]);
+  const [removedLpIds, setRemovedLpIds] = useState<string[]>([]);
 
+  // ─── Queries ───────────────────────────────────────────────────────────────
+  const { data: locatarios = [], isLoading } = useQuery({
+    queryKey: ["locatarios"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("locatarios")
+        .select(`
+          id, nombre, dni, telefono, email, notas,
+          locatario_propiedades (
+            id, locatario_id, propiedad_id,
+            fecha_inicio, fecha_fin, monto_base,
+            intervalo_ajuste_meses, indice_actualizacion, notas,
+            propiedades ( id, direccion, locador_id, locadores ( nombre ) )
+          )
+        `)
+        .order("nombre");
+      if (error) throw error;
+      return data as LocatarioConProps[];
+    },
+  });
+
+  const { data: propiedades = [] } = useQuery({
+    queryKey: ["propiedades-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("propiedades")
+        .select("id, direccion, locador_id, locadores ( nombre )")
+        .order("direccion");
+      if (error) throw error;
+      return data as Propiedad[];
+    },
+  });
+
+  // ─── Mutations ─────────────────────────────────────────────────────────────
+  const saveLocatario = useMutation({
+    mutationFn: async () => {
+      let locId = editing?.id;
+
+      if (isNew) {
+        const { data, error } = await supabase
+          .from("locatarios")
+          .insert({ nombre: form.nombre, dni: form.dni || null, telefono: form.telefono || null, email: form.email || null, notas: form.notas || null, monto_base: 0 })
+          .select("id")
+          .single();
+        if (error) throw error;
+        locId = data.id;
+      } else if (locId) {
+        const { error } = await supabase
+          .from("locatarios")
+          .update({ nombre: form.nombre, dni: form.dni || null, telefono: form.telefono || null, email: form.email || null, notas: form.notas || null })
+          .eq("id", locId);
+        if (error) throw error;
+
+        // Remove deleted relations
+        if (removedLpIds.length > 0) {
+          const { error: delErr } = await supabase.from("locatario_propiedades").delete().in("id", removedLpIds);
+          if (delErr) throw delErr;
+        }
+      }
+
+      if (!locId) return;
+
+      // Upsert property relations
+      for (const pf of propForms) {
+        if (!pf.propiedad_id) continue;
+        // Check if existing lp already exists (for edits)
+        const existingLp = editing?.locatario_propiedades.find((lp) => lp.propiedad_id === pf.propiedad_id);
+        if (existingLp && !isNew) {
+          const { error } = await supabase.from("locatario_propiedades").update({
+            fecha_inicio: pf.fecha_inicio || null,
+            fecha_fin: pf.fecha_fin || null,
+            monto_base: pf.monto_base,
+            intervalo_ajuste_meses: pf.intervalo_ajuste_meses,
+            indice_actualizacion: pf.indice_actualizacion,
+            notas: pf.notas || null,
+          }).eq("id", existingLp.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from("locatario_propiedades").insert({
+            locatario_id: locId,
+            propiedad_id: pf.propiedad_id,
+            fecha_inicio: pf.fecha_inicio || null,
+            fecha_fin: pf.fecha_fin || null,
+            monto_base: pf.monto_base,
+            intervalo_ajuste_meses: pf.intervalo_ajuste_meses,
+            indice_actualizacion: pf.indice_actualizacion,
+            notas: pf.notas || null,
+          });
+          if (error) throw error;
+        }
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["locatarios"] });
+      qc.invalidateQueries({ queryKey: ["propiedades"] });
+      setEditing(null);
+    },
+  });
+
+  const deleteLocatario = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("locatarios").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["locatarios"] });
+      setEditing(null);
+    },
+  });
+
+  // ─── Handlers ──────────────────────────────────────────────────────────────
   const upcoming = getUpcomingAdjustments(locatarios);
 
-  const filteredLocatarios = useMemo(() => {
+  const filtered = useMemo(() => {
     if (!search.trim()) return locatarios;
     const q = search.toLowerCase();
     return locatarios.filter(
-      (l) => l.nombre.toLowerCase().includes(q) || l.dni.includes(q) || l.email.toLowerCase().includes(q)
+      (l) => l.nombre.toLowerCase().includes(q) || (l.dni ?? "").includes(q) || (l.email ?? "").toLowerCase().includes(q)
     );
   }, [locatarios, search]);
 
-  const openEdit = (l: Locatario) => {
+  const openEdit = (l: LocatarioConProps) => {
     setEditing(l);
     setIsNew(false);
-    setForm({ ...l });
+    setForm({ nombre: l.nombre, dni: l.dni ?? "", telefono: l.telefono ?? "", email: l.email ?? "", notas: l.notas ?? "" });
+    setPropForms(l.locatario_propiedades.map((lp) => ({
+      propiedad_id: lp.propiedad_id,
+      fecha_inicio: lp.fecha_inicio ?? "",
+      fecha_fin: lp.fecha_fin ?? "",
+      monto_base: Number(lp.monto_base),
+      intervalo_ajuste_meses: lp.intervalo_ajuste_meses ?? 3,
+      indice_actualizacion: lp.indice_actualizacion ?? "ICL",
+      notas: lp.notas ?? "",
+    })));
+    setRemovedLpIds([]);
   };
 
   const openNew = () => {
-    setEditing({ id: -1, ...emptyForm });
+    setEditing({ id: "", nombre: "", dni: null, telefono: null, email: null, notas: null, locatario_propiedades: [] });
     setIsNew(true);
-    setForm({ ...emptyForm });
+    setForm(emptyForm);
+    setPropForms([]);
+    setRemovedLpIds([]);
   };
 
-  const handleFieldChange = (field: keyof Omit<Locatario, "id">, value: unknown) => {
-    setForm((p) => ({ ...p, [field]: value }));
+  const addPropForm = () => setPropForms((prev) => [...prev, { ...emptyPropForm }]);
+
+  const removePropForm = (index: number) => {
+    const lp = editing?.locatario_propiedades[index];
+    if (lp) setRemovedLpIds((prev) => [...prev, lp.id]);
+    setPropForms((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const toggleProp = (propId: number) => {
-    setForm((p) => ({
-      ...p,
-      propiedadIds: p.propiedadIds.includes(propId)
-        ? p.propiedadIds.filter((id) => id !== propId)
-        : [...p.propiedadIds, propId],
-    }));
+  const updatePropForm = (index: number, field: keyof PropForm, value: string | number) => {
+    setPropForms((prev) => prev.map((pf, i) => i === index ? { ...pf, [field]: value } : pf));
   };
 
-  const handleSave = () => {
-    if (isNew) {
-      const newId = Math.max(...locatarios.map((l) => l.id), 0) + 1;
-      setLocatarios((prev) => [...prev, { id: newId, ...form }]);
-    } else if (editing) {
-      setLocatarios((prev) => prev.map((l) => l.id === editing.id ? { id: editing.id, ...form } : l));
-    }
-    setEditing(null);
-  };
+  const getPropNames = (l: LocatarioConProps) =>
+    l.locatario_propiedades.map((lp) => lp.propiedades?.direccion ?? "").filter(Boolean).join(", ");
 
-  const handleDelete = (id: number) => {
-    setLocatarios((prev) => prev.filter((l) => l.id !== id));
-    setEditing(null);
-  };
-
-  const getPropNames = (ids: number[]) =>
-    ids.map((id) => propiedades.find((p) => p.id === id)?.direccion ?? "").filter(Boolean).join(", ");
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -136,11 +290,14 @@ export default function Locatarios() {
             <Bell className="w-4 h-4" />
             Próximos ajustes de alquiler (en menos de 1 mes)
           </div>
-          {upcoming.map((l) => (
-            <p key={l.id} className="text-xs text-[hsl(var(--badge-pending-text))] pl-6">
-              {l.nombre} — cada {l.ajusteMeses} meses por {l.indiceAjuste}, base ${l.montoBase.toLocaleString("es-AR")}
-            </p>
-          ))}
+          {upcoming.map((l) => {
+            const lp = l.locatario_propiedades[0];
+            return (
+              <p key={l.id} className="text-xs text-[hsl(var(--badge-pending-text))] pl-6">
+                {l.nombre} — c/{lp?.intervalo_ajuste_meses ?? 3}m por {lp?.indice_actualizacion ?? "ICL"}, base ${Number(lp?.monto_base ?? 0).toLocaleString("es-AR")}
+              </p>
+            );
+          })}
         </div>
       )}
 
@@ -153,12 +310,11 @@ export default function Locatarios() {
                 <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">DNI</th>
                 <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Teléfono</th>
                 <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Propiedades</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden xl:table-cell">Alquiler</th>
                 <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {filteredLocatarios.map((l) => (
+              {filtered.map((l) => (
                 <tr key={l.id} className="border-b border-border last:border-0 hover:bg-secondary/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -170,29 +326,23 @@ export default function Locatarios() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-foreground">{l.nombre}</p>
-                        <p className="text-xs text-muted-foreground">{l.email}</p>
+                        <p className="text-xs text-muted-foreground">{l.email ?? ""}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground hidden sm:table-cell">{l.dni}</td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground hidden md:table-cell">{l.telefono}</td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground hidden lg:table-cell max-w-xs truncate">{getPropNames(l.propiedadIds)}</td>
-                  <td className="px-6 py-4 hidden xl:table-cell">
-                    <div className="text-xs text-muted-foreground">
-                      <p className="font-medium text-foreground">${l.montoBase.toLocaleString("es-AR")}</p>
-                      <p>Ajuste c/{l.ajusteMeses}m · {l.indiceAjuste}</p>
-                    </div>
-                  </td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground hidden sm:table-cell">{l.dni ?? "—"}</td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground hidden md:table-cell">{l.telefono ?? "—"}</td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground hidden lg:table-cell max-w-xs truncate">{getPropNames(l)}</td>
                   <td className="px-6 py-4">
-                    <button
-                      onClick={() => openEdit(l)}
-                      className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
-                    >
+                    <button onClick={() => openEdit(l)} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
                       <Pencil className="w-4 h-4 text-muted-foreground" />
                     </button>
                   </td>
                 </tr>
               ))}
+              {filtered.length === 0 && (
+                <tr><td colSpan={5} className="px-6 py-8 text-sm text-muted-foreground text-center">No hay locatarios registrados.</td></tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -202,7 +352,7 @@ export default function Locatarios() {
       {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setEditing(null)} />
-          <div className="relative bg-card border border-border rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
+          <div className="relative bg-card border border-border rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden">
             <div className="flex items-center justify-between px-6 py-5 border-b border-border">
               <h2 className="font-bold text-foreground text-lg">{isNew ? "Nuevo Locatario" : "Editar Locatario"}</h2>
               <button onClick={() => setEditing(null)} className="p-2 rounded-lg hover:bg-secondary transition-colors">
@@ -210,92 +360,128 @@ export default function Locatarios() {
               </button>
             </div>
 
-            <div className="px-6 py-5 space-y-4 max-h-[75vh] overflow-y-auto">
+            <div className="px-6 py-5 space-y-5 max-h-[75vh] overflow-y-auto">
+              {/* Personal data */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Nombre y Apellido *</label>
-                  <input value={form.nombre} onChange={(e) => handleFieldChange("nombre", e.target.value)} className="w-full px-3 py-2 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="Nombre completo" />
+                  <input value={form.nombre} onChange={(e) => setForm((p) => ({ ...p, nombre: e.target.value }))} className="w-full px-3 py-2 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="Nombre completo" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">DNI</label>
-                  <input value={form.dni} onChange={(e) => handleFieldChange("dni", e.target.value)} className="w-full px-3 py-2 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="00.000.000" />
+                  <input value={form.dni} onChange={(e) => setForm((p) => ({ ...p, dni: e.target.value }))} className="w-full px-3 py-2 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="00.000.000" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Teléfono</label>
-                  <input value={form.telefono} onChange={(e) => handleFieldChange("telefono", e.target.value)} className="w-full px-3 py-2 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="351-000-0000" />
+                  <input value={form.telefono} onChange={(e) => setForm((p) => ({ ...p, telefono: e.target.value }))} className="w-full px-3 py-2 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="351-000-0000" />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Email</label>
-                  <input value={form.email} onChange={(e) => handleFieldChange("email", e.target.value)} className="w-full px-3 py-2 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="email@ejemplo.com" />
-                </div>
-              </div>
-
-              {/* Properties selection */}
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Propiedades que alquila</label>
-                <div className="space-y-1.5 max-h-32 overflow-y-auto">
-                  {propiedades.map((p) => {
-                    const loc = locadores.find((l) => l.id === p.locadorId);
-                    return (
-                      <label key={p.id} className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg hover:bg-secondary transition-colors">
-                        <input
-                          type="checkbox"
-                          checked={form.propiedadIds.includes(p.id)}
-                          onChange={() => toggleProp(p.id)}
-                          className="accent-primary"
-                        />
-                        <span className="text-sm text-foreground">{p.direccion}</span>
-                        {loc && <span className="text-xs text-muted-foreground ml-auto">({loc.nombre})</span>}
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Rental dates */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Inicio de Alquiler</label>
-                  <input type="date" value={form.inicioAlquiler} onChange={(e) => handleFieldChange("inicioAlquiler", e.target.value)} className="w-full px-3 py-2 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Finalización de Alquiler</label>
-                  <input type="date" value={form.finAlquiler} onChange={(e) => handleFieldChange("finAlquiler", e.target.value)} className="w-full px-3 py-2 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                </div>
-              </div>
-
-              {/* Monto and adjustment */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Monto Base (ARS)</label>
-                  <input type="number" value={form.montoBase} onChange={(e) => handleFieldChange("montoBase", Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="85000" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Ajuste cada (meses)</label>
-                  <input type="number" min={1} max={24} value={form.ajusteMeses} onChange={(e) => handleFieldChange("ajusteMeses", Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  <input value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} className="w-full px-3 py-2 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="email@ejemplo.com" />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Índice de Ajuste</label>
-                  <select value={form.indiceAjuste} onChange={(e) => handleFieldChange("indiceAjuste", e.target.value)} className="w-full px-3 py-2 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30">
-                    {INDICES.map((i) => <option key={i}>{i}</option>)}
-                  </select>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Notas</label>
+                  <input value={form.notas} onChange={(e) => setForm((p) => ({ ...p, notas: e.target.value }))} className="w-full px-3 py-2 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="Observaciones opcionales" />
+                </div>
+              </div>
+
+              {/* Property contracts */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Propiedades y Contratos</p>
+                  <button
+                    type="button"
+                    onClick={addPropForm}
+                    className="flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    + Agregar propiedad
+                  </button>
+                </div>
+
+                {propForms.length === 0 && (
+                  <p className="text-xs text-muted-foreground italic">Sin propiedades asignadas. Hacé click en "+ Agregar propiedad".</p>
+                )}
+
+                <div className="space-y-4">
+                  {propForms.map((pf, idx) => (
+                    <div key={idx} className="border border-border rounded-xl p-4 bg-secondary/30 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-semibold text-foreground">Propiedad {idx + 1}</p>
+                        <button type="button" onClick={() => removePropForm(idx)} className="p-1 rounded hover:bg-destructive/10 transition-colors">
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </button>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-muted-foreground mb-1">Propiedad *</label>
+                        <select
+                          value={pf.propiedad_id}
+                          onChange={(e) => updatePropForm(idx, "propiedad_id", e.target.value)}
+                          className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        >
+                          <option value="">Seleccionar propiedad...</option>
+                          {propiedades.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.direccion}{p.locadores ? ` (${p.locadores.nombre})` : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs text-muted-foreground mb-1">Inicio de contrato</label>
+                          <input type="date" value={pf.fecha_inicio} onChange={(e) => updatePropForm(idx, "fecha_inicio", e.target.value)} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-muted-foreground mb-1">Fin de contrato</label>
+                          <input type="date" value={pf.fecha_fin} onChange={(e) => updatePropForm(idx, "fecha_fin", e.target.value)} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-muted-foreground mb-1">Monto base (ARS)</label>
+                          <input type="number" value={pf.monto_base} onChange={(e) => updatePropForm(idx, "monto_base", Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="85000" />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-muted-foreground mb-1">Ajuste cada (meses)</label>
+                          <input type="number" min={1} max={24} value={pf.intervalo_ajuste_meses} onChange={(e) => updatePropForm(idx, "intervalo_ajuste_meses", Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-xs text-muted-foreground mb-1">Índice de ajuste</label>
+                          <select value={pf.indice_actualizacion} onChange={(e) => updatePropForm(idx, "indice_actualizacion", e.target.value)} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30">
+                            {INDICES.map((i) => <option key={i}>{i}</option>)}
+                          </select>
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-xs text-muted-foreground mb-1">Notas del contrato</label>
+                          <input value={pf.notas} onChange={(e) => updatePropForm(idx, "notas", e.target.value)} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="Cláusulas especiales, etc." />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
             <div className="px-6 py-4 border-t border-border flex items-center justify-between">
               {!isNew && (
-                <button onClick={() => handleDelete(editing.id)} className="flex items-center gap-1.5 text-sm text-destructive hover:bg-destructive/10 px-3 py-2 rounded-lg transition-colors">
-                  <Trash2 className="w-4 h-4" />
-                  Eliminar
+                <button
+                  onClick={() => deleteLocatario.mutate(editing.id)}
+                  disabled={deleteLocatario.isPending}
+                  className="flex items-center gap-1.5 text-sm text-destructive hover:bg-destructive/10 px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  <Trash2 className="w-4 h-4" />Eliminar
                 </button>
               )}
               <div className="flex gap-2 ml-auto">
                 <button onClick={() => setEditing(null)} className="px-4 py-2 rounded-lg text-sm border border-border hover:bg-secondary transition-colors">
                   Cancelar
                 </button>
-                <button onClick={handleSave} className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-                  Guardar
+                <button
+                  onClick={() => saveLocatario.mutate()}
+                  disabled={saveLocatario.isPending || !form.nombre.trim()}
+                  className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {saveLocatario.isPending ? "Guardando..." : "Guardar"}
                 </button>
               </div>
             </div>
