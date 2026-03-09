@@ -111,3 +111,7 @@
 .print-only {
   display: none;
 }
+
+#lovable-badge {
+  display: none !important;
+}
