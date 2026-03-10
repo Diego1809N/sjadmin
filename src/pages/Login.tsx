@@ -6,7 +6,7 @@ interface LoginProps {
 }
 
 const ADMIN_EMAIL = "admin@admin.com";
-const ADMIN_PASSWORD = "admin";
+const ADMIN_PASSWORD = "Admin1!2026";
 
 export default function Login({ onLogin }: LoginProps) {
   const [usuario, setUsuario] = useState("");
