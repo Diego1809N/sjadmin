@@ -1,7 +1,22 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { UserCheck, Building2, Plus, Trash2, X, Check, Pencil, Loader2 } from "lucide-react";
+import { UserCheck, Building2, Plus, Trash2, X, Check, Pencil, Loader2, Download } from "lucide-react";
+
+function exportToCSV(filename: string, rows: Record<string, string | number | null | undefined>[]) {
+  if (!rows.length) return;
+  const headers = Object.keys(rows[0]);
+  const escape = (v: string | number | null | undefined) => {
+    const s = v == null ? "" : String(v);
+    return `"${s.replace(/"/g, '""')}"`;
+  };
+  const csv = [headers.map(escape).join(","), ...rows.map((r) => headers.map((h) => escape(r[h])).join(","))].join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
 
 type Locador = {
   id: string;
@@ -195,12 +210,31 @@ export default function Locadores() {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Propietarios registrados en el sistema.</p>
         </div>
-        <button
-          onClick={() => setShowNewForm(true)}
-          className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-        >
-          + Nuevo Locador
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              const rows = locadores.map((l) => ({
+                Nombre: l.nombre,
+                DNI: l.dni ?? "",
+                Teléfono: l.telefono ?? "",
+                Email: l.email ?? "",
+                Dirección: l.direccion ?? "",
+                Notas: l.notas ?? "",
+                Propiedades: propsByLocador(l.id).map((p) => p.direccion).join(" | "),
+              }));
+              exportToCSV("locadores.csv", rows);
+            }}
+            className="flex items-center gap-2 border border-border text-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors"
+          >
+            <Download className="w-4 h-4" /> Exportar
+          </button>
+          <button
+            onClick={() => setShowNewForm(true)}
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            + Nuevo Locador
+          </button>
+        </div>
       </div>
 
       {/* New Locador Form */}
