@@ -210,12 +210,31 @@ export default function Locadores() {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Propietarios registrados en el sistema.</p>
         </div>
-        <button
-          onClick={() => setShowNewForm(true)}
-          className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-        >
-          + Nuevo Locador
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              const rows = locadores.map((l) => ({
+                Nombre: l.nombre,
+                DNI: l.dni ?? "",
+                Teléfono: l.telefono ?? "",
+                Email: l.email ?? "",
+                Dirección: l.direccion ?? "",
+                Notas: l.notas ?? "",
+                Propiedades: propsByLocador(l.id).map((p) => p.direccion).join(" | "),
+              }));
+              exportToCSV("locadores.csv", rows);
+            }}
+            className="flex items-center gap-2 border border-border text-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors"
+          >
+            <Download className="w-4 h-4" /> Exportar
+          </button>
+          <button
+            onClick={() => setShowNewForm(true)}
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            + Nuevo Locador
+          </button>
+        </div>
       </div>
 
       {/* New Locador Form */}
