@@ -201,11 +201,16 @@ export default function Locatarios() {
 
   const deleteLocatario = useMutation({
     mutationFn: async (id: string) => {
+      // locatario_propiedades are deleted automatically via ON DELETE CASCADE
       const { error } = await supabase.from("locatarios").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["locatarios"] });
+      qc.invalidateQueries({ queryKey: ["stat-locatarios"] });
+      qc.invalidateQueries({ queryKey: ["stat-propiedades"] });
+      qc.invalidateQueries({ queryKey: ["propiedades"] });
+      qc.invalidateQueries({ queryKey: ["propiedades-list"] });
       setEditing(null);
     },
   });
