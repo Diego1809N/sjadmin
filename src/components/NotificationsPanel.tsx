@@ -1,64 +1,111 @@
-import { X, Bell, TrendingUp, AlertTriangle } from "lucide-react";
-import { locatarios } from "@/lib/mockData";
+import { X, Bell, TrendingUp, AlertTriangle, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NotificationsPanelProps {
   open: boolean;
   onClose: () => void;
 }
 
-function getNotifications() {
+type Notification = {
+  id: string;
+  type: "ajuste" | "vencimiento";
+  locatario: string;
+  propiedad: string;
+  fecha: string;
+  diasRestantes: number;
+  indice?: string;
+};
+
+function buildNotifications(locatarios: {
+  id: string;
+  nombre: string;
+  locatario_propiedades: {
+    id: string;
+    fecha_inicio: string | null;
+    fecha_fin: string | null;
+    intervalo_ajuste_meses: number | null;
+    indice_actualizacion: string | null;
+    propiedades: { direccion: string } | null;
+  }[];
+}[]): Notification[] {
   const today = new Date();
-  const notifications: { id: number; type: "ajuste" | "vencimiento"; locatario: string; propiedad: string; fecha: string; diasRestantes: number; indice?: string }[] = [];
+  today.setHours(0, 0, 0, 0);
+  const notifications: Notification[] = [];
 
   locatarios.forEach((loc) => {
-    // Check próximo ajuste
-    const inicio = new Date(loc.inicioAlquiler);
-    let proximoAjuste = new Date(inicio);
-    while (proximoAjuste <= today) {
-      proximoAjuste.setMonth(proximoAjuste.getMonth() + loc.ajusteMeses);
-    }
-    const diasAjuste = Math.ceil((proximoAjuste.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    if (diasAjuste <= 30) {
-      notifications.push({
-        id: loc.id * 100,
-        type: "ajuste",
-        locatario: loc.nombre,
-        propiedad: `Prop. ${loc.propiedadIds.join(", ")}`,
-        fecha: proximoAjuste.toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" }),
-        diasRestantes: diasAjuste,
-        indice: loc.indiceAjuste,
-      });
-    }
+    loc.locatario_propiedades.forEach((lp) => {
+      const propNombre = lp.propiedades?.direccion ?? "Propiedad";
 
-    // Check vencimiento de contrato
-    const fin = new Date(loc.finAlquiler);
-    const diasFin = Math.ceil((fin.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    if (diasFin <= 30 && diasFin >= 0) {
-      notifications.push({
-        id: loc.id * 100 + 1,
-        type: "vencimiento",
-        locatario: loc.nombre,
-        propiedad: `Prop. ${loc.propiedadIds.join(", ")}`,
-        fecha: fin.toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" }),
-        diasRestantes: diasFin,
-      });
-    }
+      // --- Próximo ajuste ---
+      if (lp.fecha_inicio && lp.intervalo_ajuste_meses) {
+        const inicio = new Date(lp.fecha_inicio);
+        let proximoAjuste = new Date(inicio);
+        while (proximoAjuste <= today) {
+          proximoAjuste = new Date(proximoAjuste);
+          proximoAjuste.setMonth(proximoAjuste.getMonth() + lp.intervalo_ajuste_meses);
+        }
+        const diasAjuste = Math.ceil((proximoAjuste.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        if (diasAjuste <= 30) {
+          notifications.push({
+            id: `ajuste-${lp.id}`,
+            type: "ajuste",
+            locatario: loc.nombre,
+            propiedad: propNombre,
+            fecha: proximoAjuste.toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" }),
+            diasRestantes: diasAjuste,
+            indice: lp.indice_actualizacion ?? "ICL",
+          });
+        }
+      }
+
+      // --- Vencimiento de contrato ---
+      if (lp.fecha_fin) {
+        const fin = new Date(lp.fecha_fin);
+        fin.setHours(0, 0, 0, 0);
+        const diasFin = Math.ceil((fin.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        if (diasFin >= 0 && diasFin <= 30) {
+          notifications.push({
+            id: `venc-${lp.id}`,
+            type: "vencimiento",
+            locatario: loc.nombre,
+            propiedad: propNombre,
+            fecha: fin.toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" }),
+            diasRestantes: diasFin,
+          });
+        }
+      }
+    });
   });
 
-  // Add some demo notifications since mock data dates may be past
-  notifications.push(
-    { id: 9901, type: "ajuste", locatario: "Laura Pérez", propiedad: "Dpto 4B, Sunset Heights", fecha: "15 Mar 2026", diasRestantes: 16, indice: "IPC" },
-    { id: 9902, type: "ajuste", locatario: "Sofía Torres", propiedad: "Villa 7, Green Valley", fecha: "20 Mar 2026", diasRestantes: 21, indice: "IPC" },
-    { id: 9903, type: "vencimiento", locatario: "Martín Castro", propiedad: "Dpto 101, City Center", fecha: "28 Mar 2026", diasRestantes: 29 },
-  );
-
+  // Sort: fewer days first
+  notifications.sort((a, b) => a.diasRestantes - b.diasRestantes);
   return notifications;
 }
 
 export default function NotificationsPanel({ open, onClose }: NotificationsPanelProps) {
-  const notifications = getNotifications();
+  const { data: locatarios = [], isLoading } = useQuery({
+    queryKey: ["notif-locatarios"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("locatarios")
+        .select(`
+          id, nombre,
+          locatario_propiedades (
+            id, fecha_inicio, fecha_fin,
+            intervalo_ajuste_meses, indice_actualizacion,
+            propiedades ( direccion )
+          )
+        `);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: open,
+  });
 
   if (!open) return null;
+
+  const notifications = buildNotifications(locatarios as Parameters<typeof buildNotifications>[0]);
 
   return (
     <>
@@ -80,7 +127,11 @@ export default function NotificationsPanel({ open, onClose }: NotificationsPanel
         </div>
 
         <div className="max-h-96 overflow-y-auto divide-y divide-border">
-          {notifications.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+            </div>
+          ) : notifications.length === 0 ? (
             <div className="px-4 py-8 text-center text-sm text-muted-foreground">
               Sin notificaciones pendientes
             </div>
