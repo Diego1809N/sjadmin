@@ -482,8 +482,13 @@ export default function Locatarios() {
                           <input type="date" value={pf.fecha_fin} onChange={(e) => updatePropForm(idx, "fecha_fin", e.target.value)} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" />
                         </div>
                         <div>
-                          <label className="block text-xs text-muted-foreground mb-1">Monto base (ARS)</label>
+                          <label className="block text-xs text-muted-foreground mb-1">Monto actual (ARS)</label>
                           <input type="number" value={pf.monto_base} onChange={(e) => updatePropForm(idx, "monto_base", Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="85000" />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-muted-foreground mb-1">Monto nuevo (ARS)</label>
+                          <input type="number" value={pf.monto_nuevo || ""} onChange={(e) => updatePropForm(idx, "monto_nuevo", Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 border-primary/30" placeholder="Dejar vacío si no hay ajuste" />
+                          <p className="text-xs text-muted-foreground mt-0.5 italic">Completar solo al aplicar un ajuste</p>
                         </div>
                         <div>
                           <label className="block text-xs text-muted-foreground mb-1">Ajuste cada (meses)</label>
