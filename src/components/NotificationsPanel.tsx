@@ -26,6 +26,7 @@ function buildNotifications(locatarios: {
     fecha_fin: string | null;
     intervalo_ajuste_meses: number | null;
     indice_actualizacion: string | null;
+    fecha_ultimo_ajuste: string | null;
     propiedades: { direccion: string } | null;
   }[];
 }[]): Notification[] {
@@ -44,6 +45,17 @@ function buildNotifications(locatarios: {
         while (proximoAjuste <= today) {
           proximoAjuste = new Date(proximoAjuste);
           proximoAjuste.setMonth(proximoAjuste.getMonth() + lp.intervalo_ajuste_meses);
+        }
+        // Skip if last adjustment was applied for this period
+        if (lp.fecha_ultimo_ajuste) {
+          const lastAdj = new Date(lp.fecha_ultimo_ajuste);
+          lastAdj.setHours(0, 0, 0, 0);
+          const periodoInicio = new Date(proximoAjuste);
+          periodoInicio.setMonth(periodoInicio.getMonth() - lp.intervalo_ajuste_meses);
+          if (lastAdj >= periodoInicio) {
+            // Adjustment already applied for this period
+            return;
+          }
         }
         const diasAjuste = Math.ceil((proximoAjuste.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         if (diasAjuste <= 30) {
@@ -94,6 +106,7 @@ export default function NotificationsPanel({ open, onClose }: NotificationsPanel
           locatario_propiedades (
             id, fecha_inicio, fecha_fin,
             intervalo_ajuste_meses, indice_actualizacion,
+            fecha_ultimo_ajuste,
             propiedades ( direccion )
           )
         `);

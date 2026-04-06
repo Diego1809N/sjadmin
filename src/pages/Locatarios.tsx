@@ -44,6 +44,7 @@ type LocatarioProp = {
   intervalo_ajuste_meses: number | null;
   indice_actualizacion: string | null;
   notas: string | null;
+  fecha_ultimo_ajuste: string | null;
 };
 
 type LocatarioConProps = Locatario & {
@@ -57,6 +58,7 @@ type PropForm = {
   fecha_inicio: string;
   fecha_fin: string;
   monto_base: number;
+  monto_nuevo: number;
   intervalo_ajuste_meses: number;
   indice_actualizacion: string;
   notas: string;
@@ -71,6 +73,7 @@ const emptyPropForm: PropForm = {
   fecha_inicio: "",
   fecha_fin: "",
   monto_base: 0,
+  monto_nuevo: 0,
   intervalo_ajuste_meses: 3,
   indice_actualizacion: "ICL",
   notas: "",
@@ -112,6 +115,7 @@ export default function Locatarios() {
             id, locatario_id, propiedad_id,
             fecha_inicio, fecha_fin, monto_base,
             intervalo_ajuste_meses, indice_actualizacion, notas,
+            fecha_ultimo_ajuste,
             propiedades ( id, direccion, locador_id, locadores ( nombre ) )
           )
         `)
@@ -165,16 +169,18 @@ export default function Locatarios() {
       // Upsert property relations
       for (const pf of propForms) {
         if (!pf.propiedad_id) continue;
-        // Check if existing lp already exists (for edits)
+        const finalMonto = pf.monto_nuevo > 0 ? pf.monto_nuevo : pf.monto_base;
+        const applyAdjust = pf.monto_nuevo > 0;
         const existingLp = editing?.locatario_propiedades.find((lp) => lp.propiedad_id === pf.propiedad_id);
         if (existingLp && !isNew) {
           const { error } = await supabase.from("locatario_propiedades").update({
             fecha_inicio: pf.fecha_inicio || null,
             fecha_fin: pf.fecha_fin || null,
-            monto_base: pf.monto_base,
+            monto_base: finalMonto,
             intervalo_ajuste_meses: pf.intervalo_ajuste_meses,
             indice_actualizacion: pf.indice_actualizacion,
             notas: pf.notas || null,
+            ...(applyAdjust ? { fecha_ultimo_ajuste: new Date().toISOString().split("T")[0] } : {}),
           }).eq("id", existingLp.id);
           if (error) throw error;
         } else {
@@ -183,7 +189,7 @@ export default function Locatarios() {
             propiedad_id: pf.propiedad_id,
             fecha_inicio: pf.fecha_inicio || null,
             fecha_fin: pf.fecha_fin || null,
-            monto_base: pf.monto_base,
+            monto_base: finalMonto,
             intervalo_ajuste_meses: pf.intervalo_ajuste_meses,
             indice_actualizacion: pf.indice_actualizacion,
             notas: pf.notas || null,
@@ -235,6 +241,7 @@ export default function Locatarios() {
       fecha_inicio: lp.fecha_inicio ?? "",
       fecha_fin: lp.fecha_fin ?? "",
       monto_base: Number(lp.monto_base),
+      monto_nuevo: 0,
       intervalo_ajuste_meses: lp.intervalo_ajuste_meses ?? 3,
       indice_actualizacion: lp.indice_actualizacion ?? "ICL",
       notas: lp.notas ?? "",
@@ -476,8 +483,13 @@ export default function Locatarios() {
                           <input type="date" value={pf.fecha_fin} onChange={(e) => updatePropForm(idx, "fecha_fin", e.target.value)} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" />
                         </div>
                         <div>
-                          <label className="block text-xs text-muted-foreground mb-1">Monto base (ARS)</label>
+                          <label className="block text-xs text-muted-foreground mb-1">Monto actual (ARS)</label>
                           <input type="number" value={pf.monto_base} onChange={(e) => updatePropForm(idx, "monto_base", Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="85000" />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-muted-foreground mb-1">Monto nuevo (ARS)</label>
+                          <input type="number" value={pf.monto_nuevo || ""} onChange={(e) => updatePropForm(idx, "monto_nuevo", Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 border-primary/30" placeholder="Dejar vacío si no hay ajuste" />
+                          <p className="text-xs text-muted-foreground mt-0.5 italic">Completar solo al aplicar un ajuste</p>
                         </div>
                         <div>
                           <label className="block text-xs text-muted-foreground mb-1">Ajuste cada (meses)</label>

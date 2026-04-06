@@ -80,10 +80,10 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
     <div style={{
       width: "210mm",
       height: "148.5mm",
-      padding: "6mm 10mm",
+      padding: "8mm 12mm",
       boxSizing: "border-box",
       fontFamily: "Arial, sans-serif",
-      fontSize: "11px",
+      fontSize: "13px",
       background: "white",
       display: "flex",
       flexDirection: "column",
@@ -91,21 +91,21 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
       overflow: "hidden",
     }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1.5px solid #333", paddingBottom: "5px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1.5px solid #333", paddingBottom: "6px" }}>
         <div>
-          <div style={{ fontWeight: "bold", fontSize: "16px" }}>Recibo de Alquiler</div>
-          <div style={{ color: "#666", fontSize: "9px", marginTop: "2px" }}>Nº {recibo.nro_serie}</div>
+          <div style={{ fontWeight: "bold", fontSize: "19px" }}>Recibo de Alquiler</div>
+          <div style={{ color: "#666", fontSize: "11px", marginTop: "2px" }}>Nº {recibo.nro_serie}</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div style={{ fontSize: "9px", color: "#666", textAlign: "right" }}>
+          <div style={{ fontSize: "11px", color: "#666", textAlign: "right" }}>
             <span style={{ textTransform: "uppercase", letterSpacing: "0.5px" }}>Fecha de pago</span><br />
-            <strong style={{ fontSize: "13px", color: "#222" }}>{fechaConDiaBlanco}</strong>
-            <span style={{ display: "block", fontSize: "8px", textTransform: "capitalize", color: "#888" }}>{mesLabel}</span>
+            <strong style={{ fontSize: "15px", color: "#222" }}>{fechaConDiaBlanco}</strong>
+            <span style={{ display: "block", fontSize: "10px", textTransform: "capitalize", color: "#888" }}>{mesLabel}</span>
           </div>
           <div style={{
             background: tipo === "ORIGINAL" ? "#1a1a2e" : "#e2e8f0",
             color: tipo === "ORIGINAL" ? "white" : "#333",
-            padding: "5px 16px", borderRadius: "4px", fontWeight: "bold", fontSize: "12px",
+            padding: "5px 16px", borderRadius: "4px", fontWeight: "bold", fontSize: "13px",
           }}>
             {tipo}
           </div>
@@ -113,32 +113,32 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
       </div>
 
       {/* Info fields */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 3fr 2fr", gap: "6px 14px", paddingTop: "6px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 3fr 2fr", gap: "6px 14px", paddingTop: "8px" }}>
         <div>
-          <span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Locatario</span><br />
-          <strong style={{ fontSize: "12px" }}>{recibo.locatario_nombre}</strong>
+          <span style={{ color: "#666", fontSize: "10px", textTransform: "uppercase" }}>Locatario</span><br />
+          <strong style={{ fontSize: "14px" }}>{recibo.locatario_nombre}</strong>
         </div>
         <div>
-          <span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Propiedad</span><br />
-          <strong style={{ fontSize: "12px" }}>{recibo.propiedad}</strong>
+          <span style={{ color: "#666", fontSize: "10px", textTransform: "uppercase" }}>Propiedad</span><br />
+          <strong style={{ fontSize: "14px" }}>{recibo.propiedad}</strong>
         </div>
         <div>
-          <span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Vencimiento</span><br />
-          <strong style={{ fontSize: "12px" }}>{fmtDate(recibo.vencimiento)}</strong>
+          <span style={{ color: "#666", fontSize: "10px", textTransform: "uppercase" }}>Vencimiento</span><br />
+          <strong style={{ fontSize: "14px" }}>{fmtDate(recibo.vencimiento)}</strong>
         </div>
         <div style={{ gridColumn: "span 3" }}>
-          <span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Período</span><br />
-          <strong style={{ fontSize: "12px" }}>{fmtDate(recibo.periodo_desde)} al {fmtDate(recibo.periodo_hasta)}</strong>
+          <span style={{ color: "#666", fontSize: "10px", textTransform: "uppercase" }}>Período</span><br />
+          <strong style={{ fontSize: "14px" }}>{fmtDate(recibo.periodo_desde)} al {fmtDate(recibo.periodo_hasta)}</strong>
         </div>
       </div>
 
-      {/* Concepts table */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
-        <div style={{ background: "#f4f4f4", borderRadius: "4px", padding: "5px 10px" }}>
+      {/* Concepts table — centered vertically in the remaining space */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "8px 0" }}>
+        <div style={{ background: "#f4f4f4", borderRadius: "6px", padding: "10px 20px", maxWidth: "400px", margin: "0 auto", width: "100%" }}>
           {conceptosConMonto.map((c) => (
-            <div key={c.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "2px 0", borderBottom: "0.5px solid #e0e0e0" }}>
-              <span style={{ fontSize: "10px" }}>{c.label}</span>
-              <strong style={{ fontSize: "10px" }}>${c.monto.toLocaleString("es-AR")}</strong>
+            <div key={c.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: "0.5px solid #e0e0e0" }}>
+              <span style={{ fontSize: "13px" }}>{c.label}</span>
+              <strong style={{ fontSize: "13px" }}>${c.monto.toLocaleString("es-AR")}</strong>
             </div>
           ))}
         </div>
@@ -146,10 +146,10 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
 
       {/* Footer: total + signature */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderTop: "1.5px solid #333", paddingTop: "6px" }}>
-        <strong style={{ fontSize: "16px", whiteSpace: "nowrap" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
-        <div style={{ textAlign: "right", fontSize: "8px", color: "#666" }}>
+        <strong style={{ fontSize: "18px", whiteSpace: "nowrap" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
+        <div style={{ textAlign: "right", fontSize: "10px", color: "#666" }}>
           <div>Firma y Aclaración:</div>
-          <div style={{ borderBottom: "1px solid #333", width: "100px", marginTop: "16px" }}></div>
+          <div style={{ borderBottom: "1px solid #333", width: "120px", marginTop: "18px" }}></div>
         </div>
       </div>
     </div>

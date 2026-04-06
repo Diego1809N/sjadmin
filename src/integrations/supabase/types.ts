@@ -54,6 +54,7 @@ export type Database = {
         Row: {
           fecha_fin: string | null
           fecha_inicio: string | null
+          fecha_ultimo_ajuste: string | null
           id: string
           indice_actualizacion: string | null
           intervalo_ajuste_meses: number | null
@@ -65,6 +66,7 @@ export type Database = {
         Insert: {
           fecha_fin?: string | null
           fecha_inicio?: string | null
+          fecha_ultimo_ajuste?: string | null
           id?: string
           indice_actualizacion?: string | null
           intervalo_ajuste_meses?: number | null
@@ -76,6 +78,7 @@ export type Database = {
         Update: {
           fecha_fin?: string | null
           fecha_inicio?: string | null
+          fecha_ultimo_ajuste?: string | null
           id?: string
           indice_actualizacion?: string | null
           intervalo_ajuste_meses?: number | null
