@@ -106,6 +106,7 @@ export default function NotificationsPanel({ open, onClose }: NotificationsPanel
           locatario_propiedades (
             id, fecha_inicio, fecha_fin,
             intervalo_ajuste_meses, indice_actualizacion,
+            fecha_ultimo_ajuste,
             propiedades ( direccion )
           )
         `);
