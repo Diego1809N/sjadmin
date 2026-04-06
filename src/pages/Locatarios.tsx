@@ -168,16 +168,18 @@ export default function Locatarios() {
       // Upsert property relations
       for (const pf of propForms) {
         if (!pf.propiedad_id) continue;
-        // Check if existing lp already exists (for edits)
+        const finalMonto = pf.monto_nuevo > 0 ? pf.monto_nuevo : pf.monto_base;
+        const applyAdjust = pf.monto_nuevo > 0;
         const existingLp = editing?.locatario_propiedades.find((lp) => lp.propiedad_id === pf.propiedad_id);
         if (existingLp && !isNew) {
           const { error } = await supabase.from("locatario_propiedades").update({
             fecha_inicio: pf.fecha_inicio || null,
             fecha_fin: pf.fecha_fin || null,
-            monto_base: pf.monto_base,
+            monto_base: finalMonto,
             intervalo_ajuste_meses: pf.intervalo_ajuste_meses,
             indice_actualizacion: pf.indice_actualizacion,
             notas: pf.notas || null,
+            ...(applyAdjust ? { fecha_ultimo_ajuste: new Date().toISOString().split("T")[0] } : {}),
           }).eq("id", existingLp.id);
           if (error) throw error;
         } else {
@@ -186,7 +188,7 @@ export default function Locatarios() {
             propiedad_id: pf.propiedad_id,
             fecha_inicio: pf.fecha_inicio || null,
             fecha_fin: pf.fecha_fin || null,
-            monto_base: pf.monto_base,
+            monto_base: finalMonto,
             intervalo_ajuste_meses: pf.intervalo_ajuste_meses,
             indice_actualizacion: pf.indice_actualizacion,
             notas: pf.notas || null,
