@@ -115,6 +115,7 @@ export default function Locatarios() {
             id, locatario_id, propiedad_id,
             fecha_inicio, fecha_fin, monto_base,
             intervalo_ajuste_meses, indice_actualizacion, notas,
+            fecha_ultimo_ajuste,
             propiedades ( id, direccion, locador_id, locadores ( nombre ) )
           )
         `)
