@@ -44,6 +44,7 @@ type LocatarioProp = {
   intervalo_ajuste_meses: number | null;
   indice_actualizacion: string | null;
   notas: string | null;
+  fecha_ultimo_ajuste: string | null;
 };
 
 type LocatarioConProps = Locatario & {
@@ -57,6 +58,7 @@ type PropForm = {
   fecha_inicio: string;
   fecha_fin: string;
   monto_base: number;
+  monto_nuevo: number;
   intervalo_ajuste_meses: number;
   indice_actualizacion: string;
   notas: string;
@@ -71,6 +73,7 @@ const emptyPropForm: PropForm = {
   fecha_inicio: "",
   fecha_fin: "",
   monto_base: 0,
+  monto_nuevo: 0,
   intervalo_ajuste_meses: 3,
   indice_actualizacion: "ICL",
   notas: "",
@@ -235,6 +238,7 @@ export default function Locatarios() {
       fecha_inicio: lp.fecha_inicio ?? "",
       fecha_fin: lp.fecha_fin ?? "",
       monto_base: Number(lp.monto_base),
+      monto_nuevo: 0,
       intervalo_ajuste_meses: lp.intervalo_ajuste_meses ?? 3,
       indice_actualizacion: lp.indice_actualizacion ?? "ICL",
       notas: lp.notas ?? "",
