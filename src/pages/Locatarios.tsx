@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Users, Pencil, X, Trash2, Bell, Search, Loader2, Download } from "lucide-react";
+import { Users, Pencil, X, Trash2, Bell, Search, Loader2, Download, History } from "lucide-react";
 
 function exportToCSV(filename: string, rows: Record<string, string | number | null | undefined>[]) {
   if (!rows.length) return;
