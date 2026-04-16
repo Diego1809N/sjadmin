@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Users, Pencil, X, Trash2, Bell, Search, Loader2, Download } from "lucide-react";
+import { Users, Pencil, X, Trash2, Bell, Search, Loader2, Download, History } from "lucide-react";
 
 function exportToCSV(filename: string, rows: Record<string, string | number | null | undefined>[]) {
   if (!rows.length) return;
@@ -102,6 +102,7 @@ export default function Locatarios() {
   const [search, setSearch] = useState("");
   const [propForms, setPropForms] = useState<PropForm[]>([]);
   const [removedLpIds, setRemovedLpIds] = useState<string[]>([]);
+  const [showHistory, setShowHistory] = useState<string | null>(null);
 
   // ─── Queries ───────────────────────────────────────────────────────────────
   const { data: locatarios = [], isLoading } = useQuery({
@@ -134,6 +135,20 @@ export default function Locatarios() {
         .order("direccion");
       if (error) throw error;
       return data as Propiedad[];
+    },
+  });
+
+  const { data: historial = [] } = useQuery({
+    queryKey: ["historial-precios", editing?.id],
+    enabled: !!editing?.id && !isNew,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("historial_precios")
+        .select("id, locatario_id, propiedad_id, monto, fecha_desde, fecha_hasta, created_at")
+        .eq("locatario_id", editing!.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
     },
   });
 
@@ -173,6 +188,16 @@ export default function Locatarios() {
         const applyAdjust = pf.monto_nuevo > 0;
         const existingLp = editing?.locatario_propiedades.find((lp) => lp.propiedad_id === pf.propiedad_id);
         if (existingLp && !isNew) {
+          // Save old price to history if monto is changing
+          if (applyAdjust && Number(existingLp.monto_base) !== finalMonto) {
+            await supabase.from("historial_precios").insert({
+              locatario_id: locId!,
+              propiedad_id: pf.propiedad_id,
+              monto: Number(existingLp.monto_base),
+              fecha_desde: existingLp.fecha_ultimo_ajuste || existingLp.fecha_inicio || new Date().toISOString().split("T")[0],
+              fecha_hasta: new Date().toISOString().split("T")[0],
+            });
+          }
           const { error } = await supabase.from("locatario_propiedades").update({
             fecha_inicio: pf.fecha_inicio || null,
             fecha_fin: pf.fecha_fin || null,
@@ -201,6 +226,7 @@ export default function Locatarios() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["locatarios"] });
       qc.invalidateQueries({ queryKey: ["propiedades"] });
+      qc.invalidateQueries({ queryKey: ["historial-precios"] });
       setEditing(null);
     },
   });
@@ -293,14 +319,30 @@ export default function Locatarios() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              const rows = locatarios.map((l) => ({
-                Nombre: l.nombre,
-                DNI: l.dni ?? "",
-                Teléfono: l.telefono ?? "",
-                Email: l.email ?? "",
-                Notas: l.notas ?? "",
-                Propiedades: getPropNames(l),
-              }));
+              const rows: Record<string, string | number | null | undefined>[] = [];
+              locatarios.forEach((l) => {
+                if (l.locatario_propiedades.length === 0) {
+                  rows.push({ Inquilino: l.nombre, DNI: l.dni ?? "", Teléfono: l.telefono ?? "", Email: l.email ?? "", Propiedad: "", Dueño: "", "Inicio contrato": "", "Fin contrato": "", "Monto actual": "", "Ajuste cada (meses)": "", "Índice ajuste": "", Notas: l.notas ?? "" });
+                } else {
+                  l.locatario_propiedades.forEach((lp) => {
+                    const prop = propiedades.find((p) => p.id === lp.propiedad_id);
+                    rows.push({
+                      Inquilino: l.nombre,
+                      DNI: l.dni ?? "",
+                      Teléfono: l.telefono ?? "",
+                      Email: l.email ?? "",
+                      Propiedad: prop?.direccion ?? "",
+                      Dueño: prop?.locadores?.nombre ?? "",
+                      "Inicio contrato": lp.fecha_inicio ?? "",
+                      "Fin contrato": lp.fecha_fin ?? "",
+                      "Monto actual": Number(lp.monto_base),
+                      "Ajuste cada (meses)": lp.intervalo_ajuste_meses ?? "",
+                      "Índice ajuste": lp.indice_actualizacion ?? "",
+                      Notas: lp.notas ?? "",
+                    });
+                  });
+                }
+              });
               exportToCSV("locatarios.csv", rows);
             }}
             className="flex items-center gap-2 border border-border text-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors"
@@ -510,8 +552,38 @@ export default function Locatarios() {
                   ))}
                 </div>
               </div>
-            </div>
+              </div>
 
+              {/* Price History */}
+              {!isNew && historial.length > 0 && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowHistory(showHistory ? null : editing.id)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors"
+                  >
+                    <History className="w-3.5 h-3.5" />
+                    Historial de precios ({historial.length})
+                  </button>
+                  {showHistory === editing.id && (
+                    <div className="mt-2 space-y-1.5">
+                      {historial.map((h) => {
+                        const prop = propiedades.find((p) => p.id === h.propiedad_id);
+                        return (
+                          <div key={h.id} className="flex items-center justify-between bg-secondary/50 rounded-lg px-3 py-2 text-xs">
+                            <span className="text-muted-foreground">
+                              {prop?.direccion ?? "Propiedad eliminada"} — <strong className="text-foreground">${Number(h.monto).toLocaleString("es-AR")}</strong>
+                            </span>
+                            <span className="text-muted-foreground">
+                              {h.fecha_desde} → {h.fecha_hasta}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             <div className="px-6 py-4 border-t border-border flex items-center justify-between">
               {!isNew && (
                 <button
