@@ -226,6 +226,7 @@ export default function Locatarios() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["locatarios"] });
       qc.invalidateQueries({ queryKey: ["propiedades"] });
+      qc.invalidateQueries({ queryKey: ["historial-precios"] });
       setEditing(null);
     },
   });
