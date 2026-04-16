@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      historial_precios: {
+        Row: {
+          created_at: string
+          fecha_desde: string
+          fecha_hasta: string | null
+          id: string
+          locatario_id: string
+          monto: number
+          propiedad_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          fecha_desde?: string
+          fecha_hasta?: string | null
+          id?: string
+          locatario_id: string
+          monto: number
+          propiedad_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          fecha_desde?: string
+          fecha_hasta?: string | null
+          id?: string
+          locatario_id?: string
+          monto?: number
+          propiedad_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historial_precios_locatario_id_fkey"
+            columns: ["locatario_id"]
+            isOneToOne: false
+            referencedRelation: "locatarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historial_precios_propiedad_id_fkey"
+            columns: ["propiedad_id"]
+            isOneToOne: false
+            referencedRelation: "propiedades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       locadores: {
         Row: {
           created_at: string
