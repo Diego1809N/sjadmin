@@ -552,8 +552,38 @@ export default function Locatarios() {
                   ))}
                 </div>
               </div>
-            </div>
+              </div>
 
+              {/* Price History */}
+              {!isNew && historial.length > 0 && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowHistory(showHistory ? null : editing.id)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors"
+                  >
+                    <History className="w-3.5 h-3.5" />
+                    Historial de precios ({historial.length})
+                  </button>
+                  {showHistory === editing.id && (
+                    <div className="mt-2 space-y-1.5">
+                      {historial.map((h) => {
+                        const prop = propiedades.find((p) => p.id === h.propiedad_id);
+                        return (
+                          <div key={h.id} className="flex items-center justify-between bg-secondary/50 rounded-lg px-3 py-2 text-xs">
+                            <span className="text-muted-foreground">
+                              {prop?.direccion ?? "Propiedad eliminada"} — <strong className="text-foreground">${Number(h.monto).toLocaleString("es-AR")}</strong>
+                            </span>
+                            <span className="text-muted-foreground">
+                              {h.fecha_desde} → {h.fecha_hasta}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             <div className="px-6 py-4 border-t border-border flex items-center justify-between">
               {!isNew && (
                 <button
