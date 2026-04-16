@@ -213,15 +213,37 @@ export default function Locadores() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              const rows = locadores.map((l) => ({
-                Nombre: l.nombre,
-                DNI: l.dni ?? "",
-                Teléfono: l.telefono ?? "",
-                Email: l.email ?? "",
-                Dirección: l.direccion ?? "",
-                Notas: l.notas ?? "",
-                Propiedades: propsByLocador(l.id).map((p) => p.direccion).join(" | "),
-              }));
+              const rows: Record<string, string | number | null | undefined>[] = [];
+              locadores.forEach((l) => {
+                const props = propsByLocador(l.id);
+                if (props.length === 0) {
+                  rows.push({ Dueño: l.nombre, DNI: l.dni ?? "", Teléfono: l.telefono ?? "", Email: l.email ?? "", Dirección: l.direccion ?? "", Propiedad: "", Inquilino: "", "Inicio contrato": "", "Fin contrato": "", "Monto actual": "", "Ajuste cada (meses)": "", "Índice ajuste": "" });
+                } else {
+                  props.forEach((p) => {
+                    const contracts = (p as PropiedadConContrato).locatario_propiedades ?? [];
+                    if (contracts.length === 0) {
+                      rows.push({ Dueño: l.nombre, DNI: l.dni ?? "", Teléfono: l.telefono ?? "", Email: l.email ?? "", Dirección: l.direccion ?? "", Propiedad: p.direccion, Inquilino: "", "Inicio contrato": "", "Fin contrato": "", "Monto actual": "", "Ajuste cada (meses)": "", "Índice ajuste": "" });
+                    } else {
+                      contracts.forEach((c) => {
+                        rows.push({
+                          Dueño: l.nombre,
+                          DNI: l.dni ?? "",
+                          Teléfono: l.telefono ?? "",
+                          Email: l.email ?? "",
+                          Dirección: l.direccion ?? "",
+                          Propiedad: p.direccion,
+                          Inquilino: c.locatarios?.nombre ?? "",
+                          "Inicio contrato": c.fecha_inicio ?? "",
+                          "Fin contrato": c.fecha_fin ?? "",
+                          "Monto actual": Number(c.monto_base),
+                          "Ajuste cada (meses)": c.intervalo_ajuste_meses ?? "",
+                          "Índice ajuste": c.indice_actualizacion ?? "",
+                        });
+                      });
+                    }
+                  });
+                }
+              });
               exportToCSV("locadores.csv", rows);
             }}
             className="flex items-center gap-2 border border-border text-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors"
