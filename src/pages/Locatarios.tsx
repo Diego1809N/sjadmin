@@ -138,6 +138,20 @@ export default function Locatarios() {
     },
   });
 
+  const { data: historial = [] } = useQuery({
+    queryKey: ["historial-precios", editing?.id],
+    enabled: !!editing?.id && !isNew,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("historial_precios")
+        .select("id, locatario_id, propiedad_id, monto, fecha_desde, fecha_hasta, created_at")
+        .eq("locatario_id", editing!.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // ─── Mutations ─────────────────────────────────────────────────────────────
   const saveLocatario = useMutation({
     mutationFn: async () => {
