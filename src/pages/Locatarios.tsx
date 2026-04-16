@@ -102,6 +102,7 @@ export default function Locatarios() {
   const [search, setSearch] = useState("");
   const [propForms, setPropForms] = useState<PropForm[]>([]);
   const [removedLpIds, setRemovedLpIds] = useState<string[]>([]);
+  const [showHistory, setShowHistory] = useState<string | null>(null);
 
   // ─── Queries ───────────────────────────────────────────────────────────────
   const { data: locatarios = [], isLoading } = useQuery({
