@@ -42,19 +42,21 @@ function buildNotifications(locatarios: {
       if (lp.fecha_inicio && lp.intervalo_ajuste_meses) {
         const inicio = new Date(lp.fecha_inicio);
         let proximoAjuste = new Date(inicio);
+        // Avanzar hasta que la fecha de ajuste sea posterior a hoy (próxima fecha contractual)
         while (proximoAjuste <= today) {
           proximoAjuste = new Date(proximoAjuste);
           proximoAjuste.setMonth(proximoAjuste.getMonth() + lp.intervalo_ajuste_meses);
         }
-        // Skip if last adjustment was applied for this period
+        // Si el último ajuste se hizo dentro del período actual (entre la fecha contractual anterior y la próxima),
+        // significa que ya fue aplicado de forma anticipada o puntual: saltar al siguiente período.
         if (lp.fecha_ultimo_ajuste) {
           const lastAdj = new Date(lp.fecha_ultimo_ajuste);
           lastAdj.setHours(0, 0, 0, 0);
           const periodoInicio = new Date(proximoAjuste);
           periodoInicio.setMonth(periodoInicio.getMonth() - lp.intervalo_ajuste_meses);
           if (lastAdj >= periodoInicio) {
-            // Adjustment already applied for this period
-            return;
+            // Ya ajustado para este período → mostrar el siguiente vencimiento contractual
+            proximoAjuste.setMonth(proximoAjuste.getMonth() + lp.intervalo_ajuste_meses);
           }
         }
         const diasAjuste = Math.ceil((proximoAjuste.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
