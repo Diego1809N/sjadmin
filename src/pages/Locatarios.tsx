@@ -188,6 +188,16 @@ export default function Locatarios() {
         const applyAdjust = pf.monto_nuevo > 0;
         const existingLp = editing?.locatario_propiedades.find((lp) => lp.propiedad_id === pf.propiedad_id);
         if (existingLp && !isNew) {
+          // Save old price to history if monto is changing
+          if (applyAdjust && Number(existingLp.monto_base) !== finalMonto) {
+            await supabase.from("historial_precios").insert({
+              locatario_id: locId!,
+              propiedad_id: pf.propiedad_id,
+              monto: Number(existingLp.monto_base),
+              fecha_desde: existingLp.fecha_ultimo_ajuste || existingLp.fecha_inicio || new Date().toISOString().split("T")[0],
+              fecha_hasta: new Date().toISOString().split("T")[0],
+            });
+          }
           const { error } = await supabase.from("locatario_propiedades").update({
             fecha_inicio: pf.fecha_inicio || null,
             fecha_fin: pf.fecha_fin || null,
