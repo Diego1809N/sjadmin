@@ -80,15 +80,36 @@ const emptyPropForm: PropForm = {
 };
 
 function getUpcomingAdjustments(locatarios: LocatarioConProps[]) {
-  const now = new Date();
-  const oneMonthAhead = new Date(now);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const oneMonthAhead = new Date(today);
   oneMonthAhead.setMonth(oneMonthAhead.getMonth() + 1);
   return locatarios.filter((l) => {
     return l.locatario_propiedades.some((lp) => {
       if (!lp.fecha_inicio || !lp.intervalo_ajuste_meses) return false;
+
+      // Si el contrato ya venció, no mostrar alerta de ajuste hasta que se renueve
+      if (lp.fecha_fin) {
+        const fin = new Date(lp.fecha_fin);
+        fin.setHours(0, 0, 0, 0);
+        if (fin < today) return false;
+      }
+
       const inicio = new Date(lp.fecha_inicio);
       let next = new Date(inicio);
-      while (next <= now) next.setMonth(next.getMonth() + lp.intervalo_ajuste_meses);
+      while (next <= today) {
+        next.setMonth(next.getMonth() + lp.intervalo_ajuste_meses);
+      }
+      // Si el último ajuste se hizo dentro del período actual, saltar al siguiente
+      if (lp.fecha_ultimo_ajuste) {
+        const lastAdj = new Date(lp.fecha_ultimo_ajuste);
+        lastAdj.setHours(0, 0, 0, 0);
+        const periodoInicio = new Date(next);
+        periodoInicio.setMonth(periodoInicio.getMonth() - lp.intervalo_ajuste_meses);
+        if (lastAdj >= periodoInicio) {
+          next.setMonth(next.getMonth() + lp.intervalo_ajuste_meses);
+        }
+      }
       return next <= oneMonthAhead;
     });
   });
