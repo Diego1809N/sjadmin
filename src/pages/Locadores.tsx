@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { UserCheck, Building2, Plus, Trash2, X, Check, Pencil, Loader2, Download } from "lucide-react";
+import { UserCheck, Building2, Plus, Trash2, X, Check, Pencil, Loader2, Download, Search } from "lucide-react";
 
 function exportToCSV(filename: string, rows: Record<string, string | number | null | undefined>[]) {
   if (!rows.length) return;
@@ -66,6 +66,7 @@ export default function Locadores() {
   const qc = useQueryClient();
 
   const [selectedLocador, setSelectedLocador] = useState<Locador | null>(null);
+  const [search, setSearch] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState<Locador | null>(null);
 
@@ -183,6 +184,19 @@ export default function Locadores() {
   // ─── Helpers ───────────────────────────────────────────────────────────────
   const propsByLocador = (id: string) => propiedades.filter((p) => p.locador_id === id);
 
+  const filteredLocadores = useMemo(() => {
+    if (!search.trim()) return locadores;
+    const q = search.toLowerCase();
+    return locadores.filter(
+      (l) =>
+        l.nombre.toLowerCase().includes(q) ||
+        (l.dni ?? "").includes(q) ||
+        (l.email ?? "").toLowerCase().includes(q) ||
+        (l.telefono ?? "").includes(q) ||
+        (l.direccion ?? "").toLowerCase().includes(q)
+    );
+  }, [locadores, search]);
+
   const openLocador = (l: Locador) => {
     setSelectedLocador(l);
     setEditData({ ...l });
@@ -289,6 +303,18 @@ export default function Locadores() {
         </div>
       )}
 
+      {/* Search bar */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Buscar locador, DNI, email..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-9 pr-4 py-2 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
+        />
+      </div>
+
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -302,7 +328,7 @@ export default function Locadores() {
               </tr>
             </thead>
             <tbody>
-              {locadores.map((l) => (
+              {filteredLocadores.map((l) => (
                 <tr
                   key={l.id}
                   className="border-b border-border last:border-0 hover:bg-secondary/50 transition-colors cursor-pointer"
