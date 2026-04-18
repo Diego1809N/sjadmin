@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { UserCheck, Building2, Plus, Trash2, X, Check, Pencil, Loader2, Download } from "lucide-react";
+import { UserCheck, Building2, Plus, Trash2, X, Check, Pencil, Loader2, Download, Search } from "lucide-react";
 
 function exportToCSV(filename: string, rows: Record<string, string | number | null | undefined>[]) {
   if (!rows.length) return;
@@ -66,6 +66,7 @@ export default function Locadores() {
   const qc = useQueryClient();
 
   const [selectedLocador, setSelectedLocador] = useState<Locador | null>(null);
+  const [search, setSearch] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState<Locador | null>(null);
 
@@ -182,6 +183,19 @@ export default function Locadores() {
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
   const propsByLocador = (id: string) => propiedades.filter((p) => p.locador_id === id);
+
+  const filteredLocadores = useMemo(() => {
+    if (!search.trim()) return locadores;
+    const q = search.toLowerCase();
+    return locadores.filter(
+      (l) =>
+        l.nombre.toLowerCase().includes(q) ||
+        (l.dni ?? "").includes(q) ||
+        (l.email ?? "").toLowerCase().includes(q) ||
+        (l.telefono ?? "").includes(q) ||
+        (l.direccion ?? "").toLowerCase().includes(q)
+    );
+  }, [locadores, search]);
 
   const openLocador = (l: Locador) => {
     setSelectedLocador(l);
