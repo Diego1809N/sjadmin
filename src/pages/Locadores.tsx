@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UserCheck, Building2, Plus, Trash2, X, Check, Pencil, Loader2, Download, Search } from "lucide-react";
@@ -316,7 +316,7 @@ export default function Locadores() {
               </tr>
             </thead>
             <tbody>
-              {locadores.map((l) => (
+              {filteredLocadores.map((l) => (
                 <tr
                   key={l.id}
                   className="border-b border-border last:border-0 hover:bg-secondary/50 transition-colors cursor-pointer"
