@@ -8,6 +8,7 @@ import Locadores from "@/pages/Locadores";
 import Locatarios from "@/pages/Locatarios";
 import Login from "@/pages/Login";
 import RecibosGenerados from "@/pages/RecibosGenerados";
+import ActualizarMontos from "@/pages/ActualizarMontos";
 import { Loader2 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 
@@ -54,6 +55,7 @@ export default function Index() {
       case "locadores": return <Locadores />;
       case "locatarios": return <Locatarios />;
       case "recibos-generados": return <RecibosGenerados />;
+      case "actualizar-montos": return <ActualizarMontos />;
       default: return <Dashboard onNavigate={setPage} />;
     }
   };
