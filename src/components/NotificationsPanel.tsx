@@ -39,7 +39,12 @@ function buildNotifications(locatarios: {
       const propNombre = lp.propiedades?.direccion ?? "Propiedad";
 
       // --- Próximo ajuste ---
-      if (lp.fecha_inicio && lp.intervalo_ajuste_meses) {
+      // No mostrar alerta de ajuste si el contrato ya venció (sin renovar)
+      const contratoVencido = lp.fecha_fin
+        ? (() => { const f = new Date(lp.fecha_fin); f.setHours(0,0,0,0); return f < today; })()
+        : false;
+
+      if (lp.fecha_inicio && lp.intervalo_ajuste_meses && !contratoVencido) {
         const inicio = new Date(lp.fecha_inicio);
         let proximoAjuste = new Date(inicio);
         // Avanzar hasta que la fecha de ajuste sea posterior a hoy (próxima fecha contractual)
