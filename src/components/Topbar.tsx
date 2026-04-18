@@ -1,4 +1,4 @@
-import { Bell, Search } from "lucide-react";
+import { Bell } from "lucide-react";
 import { useState } from "react";
 import NotificationsPanel from "@/components/NotificationsPanel";
 
@@ -14,15 +14,8 @@ export default function Topbar({ title, onCreateReceipt }: TopbarProps) {
 
   return (
     <header className="h-16 border-b border-border bg-card flex items-center px-6 gap-4 relative">
-      <div className="flex-1 flex items-center gap-3">
-        <div className="relative max-w-md w-full hidden sm:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            className="w-full pl-9 pr-4 py-2 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
-            placeholder="Buscar propiedades, locatarios..."
-          />
-        </div>
-      </div>
+      <div className="flex-1" />
+
       <div className="flex items-center gap-2">
         <span className="text-xs text-muted-foreground hidden sm:block">
           Actualizado hoy a las {time}
