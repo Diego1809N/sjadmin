@@ -1,4 +1,4 @@
-import { LayoutDashboard, FileText, Users, UserCheck, Menu, X, LogOut, TrendingUp } from "lucide-react";
+import { LayoutDashboard, FileText, Users, UserCheck, Menu, X, LogOut, TrendingUp, Wrench } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,7 @@ const navItems = [
   { id: "locatarios", label: "Locatarios", icon: Users },
   { id: "recibos-generados", label: "Recibos Generados", icon: FileText },
   { id: "actualizar-montos", label: "Actualizar Montos", icon: TrendingUp },
+  { id: "servicios", label: "Servicios", icon: Wrench },
 ];
 
 export default function Sidebar({ currentPage, onNavigate, onLogout }: SidebarProps) {

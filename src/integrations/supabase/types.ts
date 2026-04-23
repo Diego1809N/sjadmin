@@ -318,6 +318,51 @@ export type Database = {
           },
         ]
       }
+      servicios_locatario: {
+        Row: {
+          created_at: string
+          id: string
+          locatario_id: string
+          notas: string | null
+          propiedad_id: string | null
+          servicios: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          locatario_id: string
+          notas?: string | null
+          propiedad_id?: string | null
+          servicios?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          locatario_id?: string
+          notas?: string | null
+          propiedad_id?: string | null
+          servicios?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "servicios_locatario_locatario_id_fkey"
+            columns: ["locatario_id"]
+            isOneToOne: false
+            referencedRelation: "locatarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "servicios_locatario_propiedad_id_fkey"
+            columns: ["propiedad_id"]
+            isOneToOne: false
+            referencedRelation: "propiedades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
