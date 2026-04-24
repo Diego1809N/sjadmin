@@ -176,6 +176,7 @@ export default function RecibosGenerados() {
   const [printRecibo, setPrintRecibo] = useState<Recibo | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [search, setSearch] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState<Recibo | null>(null);
 
   // ─── Query ─────────────────────────────────────────────────────────────────
   const { data: recibos = [], isLoading } = useQuery({
@@ -379,7 +380,7 @@ export default function RecibosGenerados() {
                         <button onClick={() => handlePrint(r)} title="Imprimir" className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
                           <Download className="w-4 h-4 text-muted-foreground" />
                         </button>
-                        <button onClick={() => deleteRecibo.mutate(r.id)} title="Eliminar" className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors">
+                        <button onClick={() => setConfirmDelete(r)} title="Eliminar" className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors">
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </button>
                       </div>
