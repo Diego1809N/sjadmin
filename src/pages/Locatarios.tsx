@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Users, Pencil, X, Trash2, Bell, Search, Loader2, Download, History } from "lucide-react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 function exportToCSV(filename: string, rows: Record<string, string | number | null | undefined>[]) {
   if (!rows.length) return;
@@ -124,6 +125,7 @@ export default function Locatarios() {
   const [propForms, setPropForms] = useState<PropForm[]>([]);
   const [removedLpIds, setRemovedLpIds] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // ─── Queries ───────────────────────────────────────────────────────────────
   const { data: locatarios = [], isLoading } = useQuery({
@@ -608,7 +610,7 @@ export default function Locatarios() {
             <div className="px-6 py-4 border-t border-border flex items-center justify-between">
               {!isNew && (
                 <button
-                  onClick={() => deleteLocatario.mutate(editing.id)}
+                  onClick={() => setConfirmDelete(true)}
                   disabled={deleteLocatario.isPending}
                   className="flex items-center gap-1.5 text-sm text-destructive hover:bg-destructive/10 px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
                 >
@@ -631,6 +633,13 @@ export default function Locatarios() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title="¿Eliminar locatario?"
+        description={editing ? `Se eliminará a ${editing.nombre} y todos sus contratos vinculados. Esta acción no se puede deshacer.` : ""}
+        onConfirm={() => { if (editing) deleteLocatario.mutate(editing.id); setConfirmDelete(false); }}
+      />
     </div>
   );
 }
