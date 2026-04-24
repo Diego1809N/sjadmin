@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UserCheck, Building2, Plus, Trash2, X, Check, Pencil, Loader2, Download, Search } from "lucide-react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 function exportToCSV(filename: string, rows: Record<string, string | number | null | undefined>[]) {
   if (!rows.length) return;
@@ -80,6 +81,8 @@ export default function Locadores() {
   // New locador form
   const [showNewForm, setShowNewForm] = useState(false);
   const [newLocador, setNewLocador] = useState({ nombre: "", dni: "", telefono: "", email: "", direccion: "" });
+  const [confirmDeletePropId, setConfirmDeletePropId] = useState<string | null>(null);
+  const [confirmDeleteLocador, setConfirmDeleteLocador] = useState(false);
 
   // ─── Queries ───────────────────────────────────────────────────────────────
   const { data: locadores = [], isLoading: loadingLoc } = useQuery({
@@ -506,7 +509,7 @@ export default function Locadores() {
                               <span className="text-xs text-muted-foreground">{contracts.length} contrato{contracts.length !== 1 ? "s" : ""}</span>
                             )}
                             <button
-                              onClick={(e) => { e.stopPropagation(); deletePropiedad.mutate(p.id); }}
+                              onClick={(e) => { e.stopPropagation(); setConfirmDeletePropId(p.id); }}
                               className="p-1 rounded hover:bg-destructive/10 transition-colors"
                             >
                               <Trash2 className="w-3.5 h-3.5 text-destructive" />
@@ -547,7 +550,7 @@ export default function Locadores() {
               {/* Delete */}
               <div className="pt-2 border-t border-border">
                 <button
-                  onClick={() => deleteLocador.mutate(selectedLocador.id)}
+                  onClick={() => setConfirmDeleteLocador(true)}
                   disabled={deleteLocador.isPending}
                   className="flex items-center gap-2 text-sm text-destructive hover:bg-destructive/10 px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
                 >
@@ -559,6 +562,20 @@ export default function Locadores() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={!!confirmDeletePropId}
+        onOpenChange={(o) => !o && setConfirmDeletePropId(null)}
+        title="¿Eliminar propiedad?"
+        description="Se eliminará la propiedad y todos sus contratos vinculados. Esta acción no se puede deshacer."
+        onConfirm={() => { if (confirmDeletePropId) deletePropiedad.mutate(confirmDeletePropId); setConfirmDeletePropId(null); }}
+      />
+      <ConfirmDialog
+        open={confirmDeleteLocador}
+        onOpenChange={setConfirmDeleteLocador}
+        title="¿Eliminar locador?"
+        description={selectedLocador ? `Se eliminará a ${selectedLocador.nombre} y todas sus propiedades vinculadas. Esta acción no se puede deshacer.` : ""}
+        onConfirm={() => { if (selectedLocador) deleteLocador.mutate(selectedLocador.id); setConfirmDeleteLocador(false); }}
+      />
     </div>
   );
 }
