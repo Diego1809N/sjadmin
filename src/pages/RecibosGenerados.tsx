@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Trash2, Download, Check, X, Search, Loader2 } from "lucide-react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 type Recibo = {
   id: string;
@@ -175,6 +176,7 @@ export default function RecibosGenerados() {
   const [printRecibo, setPrintRecibo] = useState<Recibo | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [search, setSearch] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState<Recibo | null>(null);
 
   // ─── Query ─────────────────────────────────────────────────────────────────
   const { data: recibos = [], isLoading } = useQuery({
@@ -378,7 +380,7 @@ export default function RecibosGenerados() {
                         <button onClick={() => handlePrint(r)} title="Imprimir" className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
                           <Download className="w-4 h-4 text-muted-foreground" />
                         </button>
-                        <button onClick={() => deleteRecibo.mutate(r.id)} title="Eliminar" className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors">
+                        <button onClick={() => setConfirmDelete(r)} title="Eliminar" className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors">
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </button>
                       </div>
@@ -393,6 +395,13 @@ export default function RecibosGenerados() {
           </div>
         )}
       </div>
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onOpenChange={(o) => !o && setConfirmDelete(null)}
+        title="¿Eliminar recibo?"
+        description={confirmDelete ? `Se eliminará el recibo Nº ${confirmDelete.nro_serie} de ${confirmDelete.locatario_nombre}. Esta acción no se puede deshacer.` : ""}
+        onConfirm={() => { if (confirmDelete) deleteRecibo.mutate(confirmDelete.id); setConfirmDelete(null); }}
+      />
     </>
   );
 }

@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Wrench, Plus, Trash2, Pencil, X, Search, Loader2, Printer, Check } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const SERVICIOS_DISPONIBLES = ["Agua", "Luz", "Gas", "Internet", "Cable", "Expensas", "ABL", "Otros"];
 
@@ -28,6 +29,7 @@ export default function Servicios() {
   const [search, setSearch] = useState("");
   const [mes, setMes] = useState(new Date().getMonth());
   const [anio, setAnio] = useState(new Date().getFullYear());
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Form state
   const [locatarioId, setLocatarioId] = useState("");
@@ -359,7 +361,7 @@ export default function Servicios() {
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => { if (confirm("¿Eliminar este registro?")) deleteMut.mutate(r.id); }}
+                            onClick={() => setConfirmDeleteId(r.id)}
                             className="p-1.5 rounded hover:bg-destructive/10 text-destructive"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -428,6 +430,13 @@ export default function Servicios() {
           </footer>
         </div>
       </div>
+      <ConfirmDialog
+        open={!!confirmDeleteId}
+        onOpenChange={(o) => !o && setConfirmDeleteId(null)}
+        title="¿Eliminar registro de servicios?"
+        description="Se eliminará la ficha de servicios del inquilino seleccionado. Esta acción no se puede deshacer."
+        onConfirm={() => { if (confirmDeleteId) deleteMut.mutate(confirmDeleteId); setConfirmDeleteId(null); }}
+      />
     </>
   );
 }
