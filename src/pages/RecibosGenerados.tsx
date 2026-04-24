@@ -395,6 +395,13 @@ export default function RecibosGenerados() {
           </div>
         )}
       </div>
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onOpenChange={(o) => !o && setConfirmDelete(null)}
+        title="¿Eliminar recibo?"
+        description={confirmDelete ? `Se eliminará el recibo Nº ${confirmDelete.nro_serie} de ${confirmDelete.locatario_nombre}. Esta acción no se puede deshacer.` : ""}
+        onConfirm={() => { if (confirmDelete) deleteRecibo.mutate(confirmDelete.id); setConfirmDelete(null); }}
+      />
     </>
   );
 }
