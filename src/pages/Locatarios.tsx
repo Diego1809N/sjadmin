@@ -330,7 +330,8 @@ export default function Locatarios() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <>
+    <div className="p-6 space-y-6 print:hidden">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
