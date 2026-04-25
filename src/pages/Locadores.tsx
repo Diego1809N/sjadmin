@@ -549,5 +549,82 @@ export default function Locadores() {
         onConfirm={() => { if (selectedLocador) deleteLocador.mutate(selectedLocador.id); setConfirmDeleteLocador(false); }}
       />
     </div>
+
+    {/* Printable area: ordered by Locador */}
+    <div className="hidden print:block listing-print">
+      <div className="lp-page">
+        <header className="lp-header">
+          <img src="/logo.png" alt="Logo" className="lp-logo" />
+          <div className="lp-title">
+            <h1>NEGOCIOS INMOBILIARIOS</h1>
+            <p>Listado de Locadores</p>
+            <p>Generado el {new Date().toLocaleDateString("es-AR")}</p>
+          </div>
+        </header>
+
+        {[...locadores].sort((a, b) => a.nombre.localeCompare(b.nombre)).map((l) => {
+          const props = propsByLocador(l.id);
+          return (
+            <section key={l.id} className="lp-locador-section">
+              <h2 className="lp-locador">Locador: {l.nombre}</h2>
+              <p className="lp-sub">
+                {l.dni ? `DNI: ${l.dni}` : ""}{l.dni && (l.telefono || l.email) ? " · " : ""}
+                {l.telefono ? `Tel: ${l.telefono}` : ""}{l.telefono && l.email ? " · " : ""}
+                {l.email ? `Email: ${l.email}` : ""}
+                {l.direccion ? <><br />Dirección: {l.direccion}</> : null}
+              </p>
+
+              {props.length === 0 ? (
+                <p className="lp-sub"><em>Sin propiedades registradas.</em></p>
+              ) : (
+                props.map((p) => {
+                  const contratos = (p as PropiedadConContrato).locatario_propiedades ?? [];
+                  return (
+                    <div key={p.id}>
+                      <p className="lp-prop-title">
+                        🏠 {p.direccion}{p.tipo ? ` — ${p.tipo}` : ""}
+                      </p>
+                      {contratos.length === 0 ? (
+                        <p className="lp-sub"><em>Sin contratos activos.</em></p>
+                      ) : (
+                        <table className="lp-table" style={{ marginLeft: "14px", width: "calc(100% - 14px)" }}>
+                          <thead>
+                            <tr>
+                              <th style={{ width: "26%" }}>Inquilino</th>
+                              <th style={{ width: "14%" }}>Inicio</th>
+                              <th style={{ width: "14%" }}>Fin</th>
+                              <th style={{ width: "16%" }}>Monto</th>
+                              <th style={{ width: "14%" }}>Ajuste (m)</th>
+                              <th style={{ width: "16%" }}>Índice</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {contratos.map((c) => (
+                              <tr key={c.id}>
+                                <td>{c.locatarios?.nombre ?? "—"}</td>
+                                <td>{c.fecha_inicio ?? "—"}</td>
+                                <td>{c.fecha_fin ?? "—"}</td>
+                                <td>${Number(c.monto_base).toLocaleString("es-AR")}</td>
+                                <td>{c.intervalo_ajuste_meses ?? "—"}</td>
+                                <td>{c.indice_actualizacion ?? "—"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </section>
+          );
+        })}
+
+        <footer className="lp-footer">
+          <p>Negocios Inmobiliarios · Listado generado automáticamente</p>
+        </footer>
+      </div>
+    </div>
+    </>
   );
 }
