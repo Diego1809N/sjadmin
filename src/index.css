@@ -95,7 +95,9 @@
   .print-only,
   .print-only *,
   .servicios-print,
-  .servicios-print * {
+  .servicios-print *,
+  .listing-print,
+  .listing-print * {
     visibility: visible !important;
   }
 
