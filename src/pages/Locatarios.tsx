@@ -342,35 +342,13 @@ export default function Locatarios() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              const rows: Record<string, string | number | null | undefined>[] = [];
-              locatarios.forEach((l) => {
-                if (l.locatario_propiedades.length === 0) {
-                  rows.push({ Inquilino: l.nombre, DNI: l.dni ?? "", Teléfono: l.telefono ?? "", Email: l.email ?? "", Propiedad: "", Dueño: "", "Inicio contrato": "", "Fin contrato": "", "Monto actual": "", "Ajuste cada (meses)": "", "Índice ajuste": "", Notas: l.notas ?? "" });
-                } else {
-                  l.locatario_propiedades.forEach((lp) => {
-                    const prop = propiedades.find((p) => p.id === lp.propiedad_id);
-                    rows.push({
-                      Inquilino: l.nombre,
-                      DNI: l.dni ?? "",
-                      Teléfono: l.telefono ?? "",
-                      Email: l.email ?? "",
-                      Propiedad: prop?.direccion ?? "",
-                      Dueño: prop?.locadores?.nombre ?? "",
-                      "Inicio contrato": lp.fecha_inicio ?? "",
-                      "Fin contrato": lp.fecha_fin ?? "",
-                      "Monto actual": Number(lp.monto_base),
-                      "Ajuste cada (meses)": lp.intervalo_ajuste_meses ?? "",
-                      "Índice ajuste": lp.indice_actualizacion ?? "",
-                      Notas: lp.notas ?? "",
-                    });
-                  });
-                }
-              });
-              exportToCSV("locatarios.csv", rows);
+              const originalTitle = document.title;
+              document.title = "Locatarios";
+              setTimeout(() => { window.print(); document.title = originalTitle; }, 100);
             }}
             className="flex items-center gap-2 border border-border text-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors"
           >
-            <Download className="w-4 h-4" /> Exportar
+            <Printer className="w-4 h-4" /> Imprimir / PDF
           </button>
           <button
             onClick={openNew}
