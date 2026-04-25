@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { UserCheck, Building2, Plus, Trash2, X, Check, Pencil, Loader2, Download, Search } from "lucide-react";
+import { UserCheck, Building2, Plus, Trash2, X, Check, Pencil, Loader2, Printer, Search } from "lucide-react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 function exportToCSV(filename: string, rows: Record<string, string | number | null | undefined>[]) {
@@ -218,7 +218,8 @@ export default function Locadores() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <>
+    <div className="p-6 space-y-6 print:hidden">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
@@ -230,42 +231,13 @@ export default function Locadores() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              const rows: Record<string, string | number | null | undefined>[] = [];
-              locadores.forEach((l) => {
-                const props = propsByLocador(l.id);
-                if (props.length === 0) {
-                  rows.push({ Dueño: l.nombre, DNI: l.dni ?? "", Teléfono: l.telefono ?? "", Email: l.email ?? "", Dirección: l.direccion ?? "", Propiedad: "", Inquilino: "", "Inicio contrato": "", "Fin contrato": "", "Monto actual": "", "Ajuste cada (meses)": "", "Índice ajuste": "" });
-                } else {
-                  props.forEach((p) => {
-                    const contracts = (p as PropiedadConContrato).locatario_propiedades ?? [];
-                    if (contracts.length === 0) {
-                      rows.push({ Dueño: l.nombre, DNI: l.dni ?? "", Teléfono: l.telefono ?? "", Email: l.email ?? "", Dirección: l.direccion ?? "", Propiedad: p.direccion, Inquilino: "", "Inicio contrato": "", "Fin contrato": "", "Monto actual": "", "Ajuste cada (meses)": "", "Índice ajuste": "" });
-                    } else {
-                      contracts.forEach((c) => {
-                        rows.push({
-                          Dueño: l.nombre,
-                          DNI: l.dni ?? "",
-                          Teléfono: l.telefono ?? "",
-                          Email: l.email ?? "",
-                          Dirección: l.direccion ?? "",
-                          Propiedad: p.direccion,
-                          Inquilino: c.locatarios?.nombre ?? "",
-                          "Inicio contrato": c.fecha_inicio ?? "",
-                          "Fin contrato": c.fecha_fin ?? "",
-                          "Monto actual": Number(c.monto_base),
-                          "Ajuste cada (meses)": c.intervalo_ajuste_meses ?? "",
-                          "Índice ajuste": c.indice_actualizacion ?? "",
-                        });
-                      });
-                    }
-                  });
-                }
-              });
-              exportToCSV("locadores.csv", rows);
+              const originalTitle = document.title;
+              document.title = "Locadores";
+              setTimeout(() => { window.print(); document.title = originalTitle; }, 100);
             }}
             className="flex items-center gap-2 border border-border text-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors"
           >
-            <Download className="w-4 h-4" /> Exportar
+            <Printer className="w-4 h-4" /> Imprimir / PDF
           </button>
           <button
             onClick={() => setShowNewForm(true)}
@@ -577,5 +549,82 @@ export default function Locadores() {
         onConfirm={() => { if (selectedLocador) deleteLocador.mutate(selectedLocador.id); setConfirmDeleteLocador(false); }}
       />
     </div>
+
+    {/* Printable area: ordered by Locador */}
+    <div className="hidden print:block listing-print">
+      <div className="lp-page">
+        <header className="lp-header">
+          <img src="/logo.png" alt="Logo" className="lp-logo" />
+          <div className="lp-title">
+            <h1>NEGOCIOS INMOBILIARIOS</h1>
+            <p>Listado de Locadores</p>
+            <p>Generado el {new Date().toLocaleDateString("es-AR")}</p>
+          </div>
+        </header>
+
+        {[...locadores].sort((a, b) => a.nombre.localeCompare(b.nombre)).map((l) => {
+          const props = propsByLocador(l.id);
+          return (
+            <section key={l.id} className="lp-locador-section">
+              <h2 className="lp-locador">Locador: {l.nombre}</h2>
+              <p className="lp-sub">
+                {l.dni ? `DNI: ${l.dni}` : ""}{l.dni && (l.telefono || l.email) ? " · " : ""}
+                {l.telefono ? `Tel: ${l.telefono}` : ""}{l.telefono && l.email ? " · " : ""}
+                {l.email ? `Email: ${l.email}` : ""}
+                {l.direccion ? <><br />Dirección: {l.direccion}</> : null}
+              </p>
+
+              {props.length === 0 ? (
+                <p className="lp-sub"><em>Sin propiedades registradas.</em></p>
+              ) : (
+                props.map((p) => {
+                  const contratos = (p as PropiedadConContrato).locatario_propiedades ?? [];
+                  return (
+                    <div key={p.id}>
+                      <p className="lp-prop-title">
+                        🏠 {p.direccion}{p.tipo ? ` — ${p.tipo}` : ""}
+                      </p>
+                      {contratos.length === 0 ? (
+                        <p className="lp-sub"><em>Sin contratos activos.</em></p>
+                      ) : (
+                        <table className="lp-table" style={{ marginLeft: "14px", width: "calc(100% - 14px)" }}>
+                          <thead>
+                            <tr>
+                              <th style={{ width: "26%" }}>Inquilino</th>
+                              <th style={{ width: "14%" }}>Inicio</th>
+                              <th style={{ width: "14%" }}>Fin</th>
+                              <th style={{ width: "16%" }}>Monto</th>
+                              <th style={{ width: "14%" }}>Ajuste (m)</th>
+                              <th style={{ width: "16%" }}>Índice</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {contratos.map((c) => (
+                              <tr key={c.id}>
+                                <td>{c.locatarios?.nombre ?? "—"}</td>
+                                <td>{c.fecha_inicio ?? "—"}</td>
+                                <td>{c.fecha_fin ?? "—"}</td>
+                                <td>${Number(c.monto_base).toLocaleString("es-AR")}</td>
+                                <td>{c.intervalo_ajuste_meses ?? "—"}</td>
+                                <td>{c.indice_actualizacion ?? "—"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </section>
+          );
+        })}
+
+        <footer className="lp-footer">
+          <p>Negocios Inmobiliarios · Listado generado automáticamente</p>
+        </footer>
+      </div>
+    </div>
+    </>
   );
 }

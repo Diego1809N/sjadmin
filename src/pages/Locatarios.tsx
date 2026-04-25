@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Users, Pencil, X, Trash2, Bell, Search, Loader2, Download, History } from "lucide-react";
+import { Users, Pencil, X, Trash2, Bell, Search, Loader2, Printer, History } from "lucide-react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 function exportToCSV(filename: string, rows: Record<string, string | number | null | undefined>[]) {
@@ -330,7 +330,8 @@ export default function Locatarios() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <>
+    <div className="p-6 space-y-6 print:hidden">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
@@ -342,35 +343,13 @@ export default function Locatarios() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              const rows: Record<string, string | number | null | undefined>[] = [];
-              locatarios.forEach((l) => {
-                if (l.locatario_propiedades.length === 0) {
-                  rows.push({ Inquilino: l.nombre, DNI: l.dni ?? "", Teléfono: l.telefono ?? "", Email: l.email ?? "", Propiedad: "", Dueño: "", "Inicio contrato": "", "Fin contrato": "", "Monto actual": "", "Ajuste cada (meses)": "", "Índice ajuste": "", Notas: l.notas ?? "" });
-                } else {
-                  l.locatario_propiedades.forEach((lp) => {
-                    const prop = propiedades.find((p) => p.id === lp.propiedad_id);
-                    rows.push({
-                      Inquilino: l.nombre,
-                      DNI: l.dni ?? "",
-                      Teléfono: l.telefono ?? "",
-                      Email: l.email ?? "",
-                      Propiedad: prop?.direccion ?? "",
-                      Dueño: prop?.locadores?.nombre ?? "",
-                      "Inicio contrato": lp.fecha_inicio ?? "",
-                      "Fin contrato": lp.fecha_fin ?? "",
-                      "Monto actual": Number(lp.monto_base),
-                      "Ajuste cada (meses)": lp.intervalo_ajuste_meses ?? "",
-                      "Índice ajuste": lp.indice_actualizacion ?? "",
-                      Notas: lp.notas ?? "",
-                    });
-                  });
-                }
-              });
-              exportToCSV("locatarios.csv", rows);
+              const originalTitle = document.title;
+              document.title = "Locatarios";
+              setTimeout(() => { window.print(); document.title = originalTitle; }, 100);
             }}
             className="flex items-center gap-2 border border-border text-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors"
           >
-            <Download className="w-4 h-4" /> Exportar
+            <Printer className="w-4 h-4" /> Imprimir / PDF
           </button>
           <button
             onClick={openNew}
@@ -641,5 +620,142 @@ export default function Locatarios() {
         onConfirm={() => { if (editing) deleteLocatario.mutate(editing.id); setConfirmDelete(false); }}
       />
     </div>
+
+    {/* Printable area: ordered by Locador */}
+    <div className="hidden print:block listing-print">
+      <div className="lp-page">
+        <header className="lp-header">
+          <img src="/logo.png" alt="Logo" className="lp-logo" />
+          <div className="lp-title">
+            <h1>NEGOCIOS INMOBILIARIOS</h1>
+            <p>Listado de Locatarios</p>
+            <p>Generado el {new Date().toLocaleDateString("es-AR")}</p>
+          </div>
+        </header>
+
+        {(() => {
+          // Build groups: { locadorNombre: { rows: [{ locatario, lp, prop }] } }
+          const groups = new Map<string, { locadorNombre: string; rows: { l: LocatarioConProps; lp: LocatarioProp & { propiedades?: Propiedad | null } }[] }>();
+          const sinLoc: { l: LocatarioConProps; lp: LocatarioProp & { propiedades?: Propiedad | null } }[] = [];
+          const sinContrato: LocatarioConProps[] = [];
+
+          locatarios.forEach((l) => {
+            if (l.locatario_propiedades.length === 0) {
+              sinContrato.push(l);
+              return;
+            }
+            l.locatario_propiedades.forEach((lp) => {
+              const prop = propiedades.find((p) => p.id === lp.propiedad_id);
+              const locNombre = prop?.locadores?.nombre ?? null;
+              if (!locNombre) {
+                sinLoc.push({ l, lp: { ...lp, propiedades: prop ?? null } });
+                return;
+              }
+              if (!groups.has(locNombre)) groups.set(locNombre, { locadorNombre: locNombre, rows: [] });
+              groups.get(locNombre)!.rows.push({ l, lp: { ...lp, propiedades: prop ?? null } });
+            });
+          });
+
+          const ordered = Array.from(groups.values()).sort((a, b) => a.locadorNombre.localeCompare(b.locadorNombre));
+
+          return (
+            <>
+              {ordered.map((g) => (
+                <section key={g.locadorNombre} className="lp-locador-section">
+                  <h2 className="lp-locador">Locador: {g.locadorNombre}</h2>
+                  <table className="lp-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: "20%" }}>Inquilino</th>
+                        <th style={{ width: "12%" }}>DNI</th>
+                        <th style={{ width: "14%" }}>Teléfono</th>
+                        <th style={{ width: "20%" }}>Propiedad</th>
+                        <th style={{ width: "11%" }}>Inicio</th>
+                        <th style={{ width: "11%" }}>Fin</th>
+                        <th style={{ width: "12%" }}>Monto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {g.rows
+                        .sort((a, b) => a.l.nombre.localeCompare(b.l.nombre))
+                        .map(({ l, lp }) => (
+                          <tr key={lp.id}>
+                            <td>{l.nombre}</td>
+                            <td>{l.dni ?? "—"}</td>
+                            <td>{l.telefono ?? "—"}</td>
+                            <td>{lp.propiedades?.direccion ?? "—"}</td>
+                            <td>{lp.fecha_inicio ?? "—"}</td>
+                            <td>{lp.fecha_fin ?? "—"}</td>
+                            <td>${Number(lp.monto_base).toLocaleString("es-AR")}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </section>
+              ))}
+
+              {sinLoc.length > 0 && (
+                <section className="lp-locador-section">
+                  <h2 className="lp-locador">Sin locador asignado</h2>
+                  <table className="lp-table">
+                    <thead>
+                      <tr>
+                        <th>Inquilino</th>
+                        <th>Propiedad</th>
+                        <th>Inicio</th>
+                        <th>Fin</th>
+                        <th>Monto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sinLoc.map(({ l, lp }) => (
+                        <tr key={lp.id}>
+                          <td>{l.nombre}</td>
+                          <td>{lp.propiedades?.direccion ?? "—"}</td>
+                          <td>{lp.fecha_inicio ?? "—"}</td>
+                          <td>{lp.fecha_fin ?? "—"}</td>
+                          <td>${Number(lp.monto_base).toLocaleString("es-AR")}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </section>
+              )}
+
+              {sinContrato.length > 0 && (
+                <section className="lp-locador-section">
+                  <h2 className="lp-locador">Locatarios sin contratos activos</h2>
+                  <table className="lp-table">
+                    <thead>
+                      <tr>
+                        <th>Inquilino</th>
+                        <th>DNI</th>
+                        <th>Teléfono</th>
+                        <th>Email</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sinContrato.map((l) => (
+                        <tr key={l.id}>
+                          <td>{l.nombre}</td>
+                          <td>{l.dni ?? "—"}</td>
+                          <td>{l.telefono ?? "—"}</td>
+                          <td>{l.email ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </section>
+              )}
+            </>
+          );
+        })()}
+
+        <footer className="lp-footer">
+          <p>Negocios Inmobiliarios · Listado generado automáticamente</p>
+        </footer>
+      </div>
+    </div>
+    </>
   );
 }
