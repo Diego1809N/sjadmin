@@ -135,11 +135,11 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
 
       {/* Concepts table — centered vertically in the remaining space */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "8px 0" }}>
-        <div style={{ background: "#f4f4f4", borderRadius: "6px", padding: "10px 20px", maxWidth: "400px", margin: "0 auto", width: "100%" }}>
+        <div style={{ background: "#f4f4f4", borderRadius: "6px", padding: "12px 24px", maxWidth: "480px", margin: "0 auto", width: "100%" }}>
           {conceptosConMonto.map((c) => (
-            <div key={c.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: "0.5px solid #e0e0e0" }}>
-              <span style={{ fontSize: "13px" }}>{c.label}</span>
-              <strong style={{ fontSize: "13px" }}>${c.monto.toLocaleString("es-AR")}</strong>
+            <div key={c.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "0.5px solid #e0e0e0" }}>
+              <span style={{ fontSize: "17px", fontWeight: 500 }}>{c.label}</span>
+              <strong style={{ fontSize: "17px" }}>${c.monto.toLocaleString("es-AR")}</strong>
             </div>
           ))}
         </div>
@@ -148,9 +148,9 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
       {/* Footer: total + signature */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderTop: "1.5px solid #333", paddingTop: "6px" }}>
         <strong style={{ fontSize: "18px", whiteSpace: "nowrap" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
-        <div style={{ textAlign: "right", fontSize: "10px", color: "#666" }}>
+        <div style={{ textAlign: "right", fontSize: "10px", color: "#666", marginRight: "40px" }}>
           <div>Firma y Aclaración:</div>
-          <div style={{ borderBottom: "1px solid #333", width: "120px", marginTop: "18px" }}></div>
+          <div style={{ borderBottom: "1px solid #333", width: "140px", marginTop: "18px" }}></div>
         </div>
       </div>
     </div>
