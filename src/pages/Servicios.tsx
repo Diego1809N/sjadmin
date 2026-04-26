@@ -5,18 +5,32 @@ import { Wrench, Plus, Trash2, Pencil, X, Search, Loader2, Printer, Check } from
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
-const SERVICIOS_DISPONIBLES = ["Agua", "Luz", "Gas", "Internet", "Cable", "Expensas", "ABL", "Otros"];
+type ServicioItem = { nombre: string; numero_cliente: string };
+
+const SERVICIOS_DISPONIBLES: { nombre: string; labelNumero: string }[] = [
+  { nombre: "Luz", labelNumero: "NIS Edesa" },
+  { nombre: "Gas", labelNumero: "N° de cliente" },
+  { nombre: "Agua", labelNumero: "N° de cuenta" },
+  { nombre: "Internet", labelNumero: "N° de cliente" },
+  { nombre: "Cable", labelNumero: "N° de cliente" },
+  { nombre: "Expensas", labelNumero: "Unidad / N°" },
+  { nombre: "ABL", labelNumero: "Partida" },
+  { nombre: "Otros", labelNumero: "Referencia" },
+];
 
 const MESES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
 ];
 
+const MESES_CORTO = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+
 type ServicioRow = {
   id: string;
   locatario_id: string;
   propiedad_id: string | null;
   servicios: string[];
+  servicios_detalle: ServicioItem[] | null;
   notas: string | null;
   locatarios?: { id: string; nombre: string } | null;
   propiedades?: { id: string; direccion: string; locador_id: string | null; locadores?: { id: string; nombre: string } | null } | null;
@@ -27,17 +41,27 @@ export default function Servicios() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<ServicioRow | null>(null);
   const [search, setSearch] = useState("");
-  const [mes, setMes] = useState(new Date().getMonth());
+  const [mesInicio, setMesInicio] = useState(new Date().getMonth());
   const [anio, setAnio] = useState(new Date().getFullYear());
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Form state
   const [locatarioId, setLocatarioId] = useState("");
   const [propiedadId, setPropiedadId] = useState("");
-  const [servicios, setServicios] = useState<string[]>([]);
+  const [serviciosDetalle, setServiciosDetalle] = useState<ServicioItem[]>([]);
   const [notas, setNotas] = useState("");
 
-  // Fetch servicios
+  // Build the 6-month window
+  const ventanaMeses = useMemo(() => {
+    const arr: { mes: number; anio: number; label: string }[] = [];
+    for (let i = 0; i < 6; i++) {
+      const m = (mesInicio + i) % 12;
+      const y = anio + Math.floor((mesInicio + i) / 12);
+      arr.push({ mes: m, anio: y, label: `${MESES_CORTO[m]} ${String(y).slice(-2)}` });
+    }
+    return arr;
+  }, [mesInicio, anio]);
+
   const { data: registros = [], isLoading } = useQuery({
     queryKey: ["servicios_locatario"],
     queryFn: async () => {
@@ -46,11 +70,13 @@ export default function Servicios() {
         .select("*, locatarios(id, nombre), propiedades(id, direccion, locador_id, locadores(id, nombre))")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as ServicioRow[];
+      return (data ?? []).map((r: any) => ({
+        ...r,
+        servicios_detalle: Array.isArray(r.servicios_detalle) ? r.servicios_detalle : [],
+      })) as ServicioRow[];
     },
   });
 
-  // Fetch locatarios with propiedades
   const { data: locatarios = [] } = useQuery({
     queryKey: ["locatarios_con_props"],
     queryFn: async () => {
@@ -67,13 +93,11 @@ export default function Servicios() {
     if (!locatarioId) return [];
     const loc = locatarios.find((l: any) => l.id === locatarioId);
     if (!loc) return [];
-    return (loc as any).locatario_propiedades
-      ?.map((lp: any) => lp.propiedades)
-      .filter(Boolean) ?? [];
+    return (loc as any).locatario_propiedades?.map((lp: any) => lp.propiedades).filter(Boolean) ?? [];
   }, [locatarioId, locatarios]);
 
   const resetForm = () => {
-    setLocatarioId(""); setPropiedadId(""); setServicios([]); setNotas("");
+    setLocatarioId(""); setPropiedadId(""); setServiciosDetalle([]); setNotas("");
     setEditing(null); setShowForm(false);
   };
 
@@ -81,7 +105,11 @@ export default function Servicios() {
     setEditing(r);
     setLocatarioId(r.locatario_id);
     setPropiedadId(r.propiedad_id ?? "");
-    setServicios(r.servicios ?? []);
+    // Migrate from old format if needed
+    const detalle: ServicioItem[] = r.servicios_detalle && r.servicios_detalle.length > 0
+      ? r.servicios_detalle
+      : (r.servicios ?? []).map((s) => ({ nombre: s, numero_cliente: "" }));
+    setServiciosDetalle(detalle);
     setNotas(r.notas ?? "");
     setShowForm(true);
   };
@@ -89,12 +117,13 @@ export default function Servicios() {
   const saveMut = useMutation({
     mutationFn: async () => {
       if (!locatarioId) throw new Error("Seleccioná un locatario");
-      if (servicios.length === 0) throw new Error("Marcá al menos un servicio");
+      if (serviciosDetalle.length === 0) throw new Error("Marcá al menos un servicio");
 
       const payload = {
         locatario_id: locatarioId,
         propiedad_id: propiedadId || null,
-        servicios,
+        servicios: serviciosDetalle.map((s) => s.nombre),
+        servicios_detalle: serviciosDetalle as any,
         notas: notas || null,
       };
 
@@ -125,8 +154,18 @@ export default function Servicios() {
     },
   });
 
-  const toggleServicio = (s: string) => {
-    setServicios((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]);
+  const toggleServicio = (nombre: string) => {
+    setServiciosDetalle((prev) => {
+      const idx = prev.findIndex((p) => p.nombre === nombre);
+      if (idx >= 0) return prev.filter((_, i) => i !== idx);
+      return [...prev, { nombre, numero_cliente: "" }];
+    });
+  };
+
+  const updateNumero = (nombre: string, numero: string) => {
+    setServiciosDetalle((prev) =>
+      prev.map((p) => (p.nombre === nombre ? { ...p, numero_cliente: numero } : p))
+    );
   };
 
   const filtrados = useMemo(() => {
@@ -139,21 +178,19 @@ export default function Servicios() {
     );
   }, [registros, search]);
 
-  // Group by locador for PDF
   const handlePrint = () => {
     if (registros.length === 0) {
       toast.error("No hay registros para imprimir");
       return;
     }
     const originalTitle = document.title;
-    document.title = `Servicios_${MESES[mes]}_${anio}`;
+    document.title = `Servicios_${MESES[mesInicio]}_${anio}`;
     setTimeout(() => {
       window.print();
       document.title = originalTitle;
     }, 100);
   };
 
-  // Group registros by locador for the printable view
   const grouped = useMemo(() => {
     const map = new Map<string, { locadorNombre: string; items: ServicioRow[] }>();
     registros.forEach((r) => {
@@ -169,7 +206,6 @@ export default function Servicios() {
     <>
       <div className="p-6 md:p-8 print:hidden">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
             <div>
               <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
@@ -177,14 +213,15 @@ export default function Servicios() {
                 Servicios
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Gestioná qué servicios paga cada inquilino y generá la planilla mensual de control.
+                Registrá los servicios y números de cliente de cada inquilino. Generá una planilla de control con casilleros para 6 meses.
               </p>
             </div>
             <div className="flex gap-2 flex-wrap">
               <select
-                value={mes}
-                onChange={(e) => setMes(Number(e.target.value))}
+                value={mesInicio}
+                onChange={(e) => setMesInicio(Number(e.target.value))}
                 className="h-10 px-3 rounded-lg border border-input bg-background text-sm"
+                title="Mes inicial de la planilla (cubre 6 meses)"
               >
                 {MESES.map((m, i) => <option key={i} value={i}>{m}</option>)}
               </select>
@@ -209,7 +246,6 @@ export default function Servicios() {
             </div>
           </div>
 
-          {/* Search */}
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
@@ -220,7 +256,6 @@ export default function Servicios() {
             />
           </div>
 
-          {/* Form */}
           {showForm && (
             <div className="bg-card border border-border rounded-lg p-5 mb-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
@@ -267,25 +302,42 @@ export default function Servicios() {
                 </div>
               </div>
 
-              <div className="mt-4">
-                <label className="text-xs font-medium text-muted-foreground mb-2 block">Servicios que paga *</label>
-                <div className="flex flex-wrap gap-2">
+              <div className="mt-5">
+                <label className="text-xs font-medium text-muted-foreground mb-2 block">
+                  Servicios que paga * <span className="text-muted-foreground font-normal">(marcá y completá los números de cliente)</span>
+                </label>
+                <div className="space-y-2">
                   {SERVICIOS_DISPONIBLES.map((s) => {
-                    const active = servicios.includes(s);
+                    const item = serviciosDetalle.find((d) => d.nombre === s.nombre);
+                    const active = !!item;
                     return (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => toggleServicio(s)}
-                        className={`px-3 py-1.5 rounded-full text-sm border transition-colors flex items-center gap-1.5 ${
-                          active
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-background text-foreground border-border hover:bg-secondary"
+                      <div
+                        key={s.nombre}
+                        className={`flex flex-col sm:flex-row sm:items-center gap-2 p-3 rounded-lg border transition-colors ${
+                          active ? "bg-primary/5 border-primary/40" : "bg-background border-border"
                         }`}
                       >
-                        {active && <Check className="w-3.5 h-3.5" />}
-                        {s}
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleServicio(s.nombre)}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium border min-w-[140px] ${
+                            active
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-background text-foreground border-border hover:bg-secondary"
+                          }`}
+                        >
+                          {active && <Check className="w-3.5 h-3.5" />}
+                          {s.nombre}
+                        </button>
+                        <input
+                          type="text"
+                          value={item?.numero_cliente ?? ""}
+                          onChange={(e) => updateNumero(s.nombre, e.target.value)}
+                          disabled={!active}
+                          placeholder={active ? s.labelNumero : "Marcá el servicio para habilitar"}
+                          className="flex-1 h-9 px-3 rounded-md border border-input bg-background text-sm disabled:opacity-50"
+                        />
+                      </div>
                     );
                   })}
                 </div>
@@ -319,7 +371,6 @@ export default function Servicios() {
             </div>
           )}
 
-          {/* List */}
           {isLoading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -336,40 +387,45 @@ export default function Servicios() {
                     <th className="text-left px-4 py-3 font-medium">Locatario</th>
                     <th className="text-left px-4 py-3 font-medium">Propiedad</th>
                     <th className="text-left px-4 py-3 font-medium">Locador</th>
-                    <th className="text-left px-4 py-3 font-medium">Servicios</th>
+                    <th className="text-left px-4 py-3 font-medium">Servicios y números</th>
                     <th className="text-right px-4 py-3 font-medium">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtrados.map((r) => (
-                    <tr key={r.id} className="border-t border-border">
-                      <td className="px-4 py-3 font-medium text-foreground">{r.locatarios?.nombre ?? "—"}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{r.propiedades?.direccion ?? "—"}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{r.propiedades?.locadores?.nombre ?? "—"}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {r.servicios.map((s) => (
-                            <span key={s} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
-                              {s}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-1">
-                          <button onClick={() => startEdit(r)} className="p-1.5 rounded hover:bg-secondary text-muted-foreground">
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setConfirmDeleteId(r.id)}
-                            className="p-1.5 rounded hover:bg-destructive/10 text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {filtrados.map((r) => {
+                    const detalle: ServicioItem[] = r.servicios_detalle && r.servicios_detalle.length > 0
+                      ? r.servicios_detalle
+                      : (r.servicios ?? []).map((s) => ({ nombre: s, numero_cliente: "" }));
+                    return (
+                      <tr key={r.id} className="border-t border-border align-top">
+                        <td className="px-4 py-3 font-medium text-foreground">{r.locatarios?.nombre ?? "—"}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{r.propiedades?.direccion ?? "—"}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{r.propiedades?.locadores?.nombre ?? "—"}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-1.5">
+                            {detalle.map((s) => (
+                              <span key={s.nombre} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
+                                {s.nombre}{s.numero_cliente ? `: ${s.numero_cliente}` : ""}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex justify-end gap-1">
+                            <button onClick={() => startEdit(r)} className="p-1.5 rounded hover:bg-secondary text-muted-foreground">
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setConfirmDeleteId(r.id)}
+                              className="p-1.5 rounded hover:bg-destructive/10 text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -377,7 +433,7 @@ export default function Servicios() {
         </div>
       </div>
 
-      {/* Printable area */}
+      {/* Printable area: A4 landscape recommended for 6 month grid */}
       <div className="hidden print:block servicios-print">
         <div className="print-page">
           <header className="print-header">
@@ -385,43 +441,52 @@ export default function Servicios() {
             <div className="print-title">
               <h1>NEGOCIOS INMOBILIARIOS</h1>
               <p>Planilla de Control de Servicios</p>
-              <p className="print-period">{MESES[mes]} {anio}</p>
+              <p className="print-period">
+                Período: {MESES[ventanaMeses[0].mes]} {ventanaMeses[0].anio} — {MESES[ventanaMeses[5].mes]} {ventanaMeses[5].anio}
+              </p>
             </div>
           </header>
 
           {grouped.map((g) => (
             <section key={g.locadorNombre} className="print-locador-section">
               <h2 className="print-locador">Locador: {g.locadorNombre}</h2>
-              <table className="print-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: "22%" }}>Inquilino</th>
-                    <th style={{ width: "23%" }}>Propiedad</th>
-                    <th style={{ width: "20%" }}>Servicio</th>
-                    <th style={{ width: "8%" }}>Pagó</th>
-                    <th style={{ width: "13%" }}>Fecha pago</th>
-                    <th style={{ width: "14%" }}>Monto</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {g.items.map((r) =>
-                    r.servicios.map((s, idx) => (
-                      <tr key={`${r.id}-${s}`}>
-                        {idx === 0 ? (
-                          <>
-                            <td rowSpan={r.servicios.length} className="print-name">{r.locatarios?.nombre ?? "—"}</td>
-                            <td rowSpan={r.servicios.length} className="print-prop">{r.propiedades?.direccion ?? "—"}</td>
-                          </>
-                        ) : null}
-                        <td>{s}</td>
-                        <td className="print-check"><span className="print-box" /></td>
-                        <td className="print-line"></td>
-                        <td className="print-line">$</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+              {g.items.map((r) => {
+                const detalle: ServicioItem[] = r.servicios_detalle && r.servicios_detalle.length > 0
+                  ? r.servicios_detalle
+                  : (r.servicios ?? []).map((s) => ({ nombre: s, numero_cliente: "" }));
+                return (
+                  <div key={r.id} className="print-inquilino-block">
+                    <div className="print-inquilino-head">
+                      <span className="print-inquilino-nombre">{r.locatarios?.nombre ?? "—"}</span>
+                      <span className="print-inquilino-prop">{r.propiedades?.direccion ?? "—"}</span>
+                    </div>
+                    <table className="print-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: "16%" }}>Servicio</th>
+                          <th style={{ width: "22%" }}>N° Cliente / NIS</th>
+                          {ventanaMeses.map((m) => (
+                            <th key={`${m.mes}-${m.anio}`} className="print-mes-col">{m.label}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detalle.map((s) => (
+                          <tr key={s.nombre}>
+                            <td className="print-name">{s.nombre}</td>
+                            <td className="print-num">{s.numero_cliente || <span className="print-line">—</span>}</td>
+                            {ventanaMeses.map((m) => (
+                              <td key={`${m.mes}-${m.anio}`} className="print-check">
+                                <span className="print-box" />
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })}
             </section>
           ))}
 
