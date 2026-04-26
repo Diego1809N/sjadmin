@@ -326,6 +326,7 @@ export type Database = {
           notas: string | null
           propiedad_id: string | null
           servicios: string[]
+          servicios_detalle: Json
           updated_at: string
         }
         Insert: {
@@ -335,6 +336,7 @@ export type Database = {
           notas?: string | null
           propiedad_id?: string | null
           servicios?: string[]
+          servicios_detalle?: Json
           updated_at?: string
         }
         Update: {
@@ -344,6 +346,7 @@ export type Database = {
           notas?: string | null
           propiedad_id?: string | null
           servicios?: string[]
+          servicios_detalle?: Json
           updated_at?: string
         }
         Relationships: [
