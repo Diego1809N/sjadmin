@@ -177,8 +177,32 @@
     font-weight: 700;
     background: #f0f0f0;
     padding: 6px 10px;
-    margin: 0 0 4px;
+    margin: 0 0 6px;
     border-left: 4px solid #2563eb;
+  }
+
+  .servicios-print .print-inquilino-block {
+    margin: 0 0 10px;
+    page-break-inside: avoid;
+  }
+
+  .servicios-print .print-inquilino-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    background: #fafafa;
+    border: 1px solid #d0d0d0;
+    border-bottom: none;
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  .servicios-print .print-inquilino-nombre {
+    font-weight: 700;
+    color: #111;
+  }
+  .servicios-print .print-inquilino-prop {
+    color: #444;
+    font-size: 10.5px;
   }
 
   .servicios-print .print-table {
@@ -190,14 +214,14 @@
   .servicios-print .print-table th {
     background: #fafafa;
     border: 1px solid #999;
-    padding: 5px 6px;
+    padding: 4px 6px;
     text-align: left;
     font-weight: 700;
   }
 
   .servicios-print .print-table td {
     border: 1px solid #bbb;
-    padding: 6px;
+    padding: 5px 6px;
     vertical-align: middle;
   }
 
@@ -205,10 +229,14 @@
     font-weight: 600;
     background: #fafafa;
   }
-  .servicios-print .print-prop {
-    background: #fafafa;
+  .servicios-print .print-num {
+    font-family: 'Courier New', monospace;
+    font-size: 10.5px;
+  }
+  .servicios-print .print-mes-col {
+    text-align: center !important;
+    width: 9%;
     font-size: 10px;
-    color: #333;
   }
 
   .servicios-print .print-check {
@@ -216,8 +244,8 @@
   }
   .servicios-print .print-box {
     display: inline-block;
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
     border: 1.5px solid #111;
     border-radius: 2px;
   }
