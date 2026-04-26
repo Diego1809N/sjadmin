@@ -80,6 +80,15 @@
     margin: 0;
   }
 
+  /* Servicios planilla: orientación horizontal para grilla de 6 meses */
+  @page servicios-landscape {
+    size: A4 landscape;
+    margin: 0;
+  }
+  .servicios-print {
+    page: servicios-landscape;
+  }
+
   /* Hide everything */
   html, body {
     margin: 0 !important;
