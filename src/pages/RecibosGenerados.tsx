@@ -65,16 +65,13 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
 
   const total = conceptosConMonto.reduce((s, c) => s + c.monto, 0);
 
-  // Derive month/year from recibo.fecha
-  let mesNum = "??", anioNum = "????", mesLabel = "";
+  // Derive year from recibo.fecha
+  let anioNum = "????";
   const parts = (recibo.fecha ?? "").split("-");
   if (parts.length === 3) {
-    mesNum = parts[1];
     anioNum = parts[0];
-    const d = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
-    mesLabel = d.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
   }
-  const fechaConDiaBlanco = `__/${mesNum}/${anioNum}`;
+  const fechaConDiaBlanco = `__/__/${anioNum}`;
 
   // Each half = exactly 148.5mm (half A4)
   const halfContent = (tipo: "ORIGINAL" | "COPIA") => (
