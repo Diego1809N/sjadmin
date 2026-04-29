@@ -248,7 +248,7 @@ export default function GenerarCobro() {
       </div>
 
       {/* Info fields */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 3fr 2fr", gap: "6px 14px", paddingTop: "6px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 3fr", gap: "6px 14px", paddingTop: "6px" }}>
         <div>
           <span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Locatario</span><br />
           <strong style={{ fontSize: "12px" }}>{form.locatario}</strong>
@@ -257,11 +257,7 @@ export default function GenerarCobro() {
           <span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Propiedad</span><br />
           <strong style={{ fontSize: "12px" }}>{form.propiedad}</strong>
         </div>
-        <div>
-          <span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Vencimiento</span><br />
-          <strong style={{ fontSize: "12px" }}>{fmtDate(form.vencimiento)}</strong>
-        </div>
-        <div style={{ gridColumn: "span 3" }}>
+        <div style={{ gridColumn: "span 2" }}>
           <span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Período</span><br />
           <strong style={{ fontSize: "12px" }}>{fmtDate(form.periodoDesde)} al {fmtDate(form.periodoHasta)}</strong>
         </div>
