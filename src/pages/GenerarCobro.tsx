@@ -314,8 +314,7 @@ export default function GenerarCobro() {
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div><p className="text-xs font-semibold text-muted-foreground uppercase">Locatario</p><p className="font-medium">{form.locatario}</p></div>
-              <div><p className="text-xs font-semibold text-muted-foreground uppercase">Vencimiento</p><p className="font-medium">{fmtDate(form.vencimiento)}</p></div>
-              <div className="col-span-2"><p className="text-xs font-semibold text-muted-foreground uppercase">Propiedad</p><p className="font-medium">{form.propiedad}</p></div>
+              <div><p className="text-xs font-semibold text-muted-foreground uppercase">Propiedad</p><p className="font-medium">{form.propiedad}</p></div>
               <div className="col-span-2"><p className="text-xs font-semibold text-muted-foreground uppercase">Período</p><p className="font-medium">{fmtDate(form.periodoDesde)} → {fmtDate(form.periodoHasta)}</p></div>
             </div>
             <div className="bg-secondary rounded-lg p-4 space-y-1.5">
