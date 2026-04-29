@@ -204,10 +204,8 @@ export default function GenerarCobro() {
 
   // ─── Get month/year for receipt ───────────────────────────────────────────
   const now = new Date();
-  const mesAnio = now.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
-  const mesNum = String(now.getMonth() + 1).padStart(2, "0");
   const anioNum = now.getFullYear();
-  const fechaConDiaBlanco = `__/${mesNum}/${anioNum}`;
+  const fechaConDiaBlanco = `__/__/${anioNum}`;
 
   // ─── Print receipt ────────────────────────────────────────────────────────
   const conceptosConMonto = conceptos.filter((c) => c.monto > 0);
