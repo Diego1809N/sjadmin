@@ -111,7 +111,7 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
       </div>
 
       {/* Info fields */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 3fr 2fr", gap: "6px 14px", paddingTop: "8px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 3fr", gap: "6px 14px", paddingTop: "8px" }}>
         <div>
           <span style={{ color: "#666", fontSize: "10px", textTransform: "uppercase" }}>Locatario</span><br />
           <strong style={{ fontSize: "14px" }}>{recibo.locatario_nombre}</strong>
@@ -120,11 +120,7 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
           <span style={{ color: "#666", fontSize: "10px", textTransform: "uppercase" }}>Propiedad</span><br />
           <strong style={{ fontSize: "14px" }}>{recibo.propiedad}</strong>
         </div>
-        <div>
-          <span style={{ color: "#666", fontSize: "10px", textTransform: "uppercase" }}>Vencimiento</span><br />
-          <strong style={{ fontSize: "14px" }}>{fmtDate(recibo.vencimiento)}</strong>
-        </div>
-        <div style={{ gridColumn: "span 3" }}>
+        <div style={{ gridColumn: "span 2" }}>
           <span style={{ color: "#666", fontSize: "10px", textTransform: "uppercase" }}>Período</span><br />
           <strong style={{ fontSize: "14px" }}>{fmtDate(recibo.periodo_desde)} al {fmtDate(recibo.periodo_hasta)}</strong>
         </div>
