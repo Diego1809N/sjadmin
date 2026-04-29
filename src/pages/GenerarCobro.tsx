@@ -438,10 +438,6 @@ export default function GenerarCobro() {
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Período Hasta *</label>
             <input name="periodoHasta" type="date" value={form.periodoHasta} onChange={(e) => setForm((p) => ({ ...p, periodoHasta: e.target.value }))} required className="w-full px-3 py-2.5 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Fecha de Vencimiento</label>
-            <input name="vencimiento" type="date" value={form.vencimiento} onChange={(e) => setForm((p) => ({ ...p, vencimiento: e.target.value }))} className="w-full px-3 py-2.5 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" />
-          </div>
         </div>
 
         {/* Conceptos */}
