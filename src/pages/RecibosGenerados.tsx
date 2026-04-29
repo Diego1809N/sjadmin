@@ -65,16 +65,13 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
 
   const total = conceptosConMonto.reduce((s, c) => s + c.monto, 0);
 
-  // Derive month/year from recibo.fecha
-  let mesNum = "??", anioNum = "????", mesLabel = "";
+  // Derive year from recibo.fecha
+  let anioNum = "????";
   const parts = (recibo.fecha ?? "").split("-");
   if (parts.length === 3) {
-    mesNum = parts[1];
     anioNum = parts[0];
-    const d = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
-    mesLabel = d.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
   }
-  const fechaConDiaBlanco = `__/${mesNum}/${anioNum}`;
+  const fechaConDiaBlanco = `__/__/${anioNum}`;
 
   // Each half = exactly 148.5mm (half A4)
   const halfContent = (tipo: "ORIGINAL" | "COPIA") => (
@@ -101,7 +98,7 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
           <div style={{ fontSize: "11px", color: "#666", textAlign: "right" }}>
             <span style={{ textTransform: "uppercase", letterSpacing: "0.5px" }}>Fecha de pago</span><br />
             <strong style={{ fontSize: "15px", color: "#222" }}>{fechaConDiaBlanco}</strong>
-            <span style={{ display: "block", fontSize: "10px", textTransform: "capitalize", color: "#888" }}>{mesLabel}</span>
+            
           </div>
           <div style={{
             background: tipo === "ORIGINAL" ? "#1a1a2e" : "#e2e8f0",
@@ -114,7 +111,7 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
       </div>
 
       {/* Info fields */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 3fr 2fr", gap: "6px 14px", paddingTop: "8px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 3fr", gap: "6px 14px", paddingTop: "8px" }}>
         <div>
           <span style={{ color: "#666", fontSize: "10px", textTransform: "uppercase" }}>Locatario</span><br />
           <strong style={{ fontSize: "14px" }}>{recibo.locatario_nombre}</strong>
@@ -123,11 +120,7 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
           <span style={{ color: "#666", fontSize: "10px", textTransform: "uppercase" }}>Propiedad</span><br />
           <strong style={{ fontSize: "14px" }}>{recibo.propiedad}</strong>
         </div>
-        <div>
-          <span style={{ color: "#666", fontSize: "10px", textTransform: "uppercase" }}>Vencimiento</span><br />
-          <strong style={{ fontSize: "14px" }}>{fmtDate(recibo.vencimiento)}</strong>
-        </div>
-        <div style={{ gridColumn: "span 3" }}>
+        <div style={{ gridColumn: "span 2" }}>
           <span style={{ color: "#666", fontSize: "10px", textTransform: "uppercase" }}>Período</span><br />
           <strong style={{ fontSize: "14px" }}>{fmtDate(recibo.periodo_desde)} al {fmtDate(recibo.periodo_hasta)}</strong>
         </div>

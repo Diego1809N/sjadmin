@@ -204,10 +204,8 @@ export default function GenerarCobro() {
 
   // ─── Get month/year for receipt ───────────────────────────────────────────
   const now = new Date();
-  const mesAnio = now.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
-  const mesNum = String(now.getMonth() + 1).padStart(2, "0");
   const anioNum = now.getFullYear();
-  const fechaConDiaBlanco = `__/${mesNum}/${anioNum}`;
+  const fechaConDiaBlanco = `__/__/${anioNum}`;
 
   // ─── Print receipt ────────────────────────────────────────────────────────
   const conceptosConMonto = conceptos.filter((c) => c.monto > 0);
@@ -237,7 +235,7 @@ export default function GenerarCobro() {
           <div style={{ fontSize: "9px", color: "#666", textAlign: "right" }}>
             <span style={{ textTransform: "uppercase", letterSpacing: "0.5px" }}>Fecha de pago</span><br />
             <strong style={{ fontSize: "13px", color: "#222" }}>{fechaConDiaBlanco}</strong>
-            <span style={{ display: "block", fontSize: "8px", textTransform: "capitalize", color: "#888" }}>{mesAnio}</span>
+            
           </div>
           <div style={{
             background: tipo === "ORIGINAL" ? "#1a1a2e" : "#e2e8f0",
@@ -250,7 +248,7 @@ export default function GenerarCobro() {
       </div>
 
       {/* Info fields */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 3fr 2fr", gap: "6px 14px", paddingTop: "6px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 3fr", gap: "6px 14px", paddingTop: "6px" }}>
         <div>
           <span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Locatario</span><br />
           <strong style={{ fontSize: "12px" }}>{form.locatario}</strong>
@@ -259,11 +257,7 @@ export default function GenerarCobro() {
           <span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Propiedad</span><br />
           <strong style={{ fontSize: "12px" }}>{form.propiedad}</strong>
         </div>
-        <div>
-          <span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Vencimiento</span><br />
-          <strong style={{ fontSize: "12px" }}>{fmtDate(form.vencimiento)}</strong>
-        </div>
-        <div style={{ gridColumn: "span 3" }}>
+        <div style={{ gridColumn: "span 2" }}>
           <span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Período</span><br />
           <strong style={{ fontSize: "12px" }}>{fmtDate(form.periodoDesde)} al {fmtDate(form.periodoHasta)}</strong>
         </div>
@@ -320,8 +314,7 @@ export default function GenerarCobro() {
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div><p className="text-xs font-semibold text-muted-foreground uppercase">Locatario</p><p className="font-medium">{form.locatario}</p></div>
-              <div><p className="text-xs font-semibold text-muted-foreground uppercase">Vencimiento</p><p className="font-medium">{fmtDate(form.vencimiento)}</p></div>
-              <div className="col-span-2"><p className="text-xs font-semibold text-muted-foreground uppercase">Propiedad</p><p className="font-medium">{form.propiedad}</p></div>
+              <div><p className="text-xs font-semibold text-muted-foreground uppercase">Propiedad</p><p className="font-medium">{form.propiedad}</p></div>
               <div className="col-span-2"><p className="text-xs font-semibold text-muted-foreground uppercase">Período</p><p className="font-medium">{fmtDate(form.periodoDesde)} → {fmtDate(form.periodoHasta)}</p></div>
             </div>
             <div className="bg-secondary rounded-lg p-4 space-y-1.5">
@@ -444,10 +437,6 @@ export default function GenerarCobro() {
           <div>
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Período Hasta *</label>
             <input name="periodoHasta" type="date" value={form.periodoHasta} onChange={(e) => setForm((p) => ({ ...p, periodoHasta: e.target.value }))} required className="w-full px-3 py-2.5 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Fecha de Vencimiento</label>
-            <input name="vencimiento" type="date" value={form.vencimiento} onChange={(e) => setForm((p) => ({ ...p, vencimiento: e.target.value }))} className="w-full px-3 py-2.5 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
         </div>
 
