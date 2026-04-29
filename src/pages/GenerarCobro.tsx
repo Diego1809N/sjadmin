@@ -235,7 +235,7 @@ export default function GenerarCobro() {
           <div style={{ fontSize: "9px", color: "#666", textAlign: "right" }}>
             <span style={{ textTransform: "uppercase", letterSpacing: "0.5px" }}>Fecha de pago</span><br />
             <strong style={{ fontSize: "13px", color: "#222" }}>{fechaConDiaBlanco}</strong>
-            <span style={{ display: "block", fontSize: "8px", textTransform: "capitalize", color: "#888" }}>{mesAnio}</span>
+            
           </div>
           <div style={{
             background: tipo === "ORIGINAL" ? "#1a1a2e" : "#e2e8f0",
