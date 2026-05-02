@@ -141,16 +141,17 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
       {/* Footer: total + signature */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderTop: "1.5px solid #333", paddingTop: "6px" }}>
         <strong style={{ fontSize: "18px", whiteSpace: "nowrap" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
-        <div style={{ textAlign: "right", fontSize: "10px", color: "#666", marginRight: "40px" }}>
-          <div>Firma y Aclaración:</div>
-          <div style={{ borderBottom: "1px solid #333", width: "140px", marginTop: "18px" }}></div>
+        <div style={{ textAlign: "right", fontSize: "10px", color: "#666", marginRight: "40px", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+          <div style={{ height: "22px" }}></div>
+          <div style={{ borderBottom: "1px solid #333", width: "160px" }}></div>
+          <div style={{ marginTop: "2px" }}>Firma</div>
         </div>
       </div>
     </div>
   );
 
   return (
-    <div style={{ width: "210mm", height: "297mm", background: "white", display: "flex", flexDirection: "column" }}>
+    <div style={{ width: "210mm", height: "296mm", background: "white", display: "flex", flexDirection: "column", overflow: "hidden", pageBreakAfter: "avoid", pageBreakInside: "avoid" }}>
       {halfContent("ORIGINAL")}
       <div style={{ borderTop: "1.5px dashed #aaa", position: "relative", margin: "0", flexShrink: 0 }}>
         <span style={{ position: "absolute", left: "50%", top: "-9px", transform: "translateX(-50%)", fontSize: "9px", color: "#aaa", background: "white", padding: "0 6px", letterSpacing: "2px" }}>
