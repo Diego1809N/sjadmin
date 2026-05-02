@@ -121,7 +121,7 @@ export default function GenerarCobro() {
         .select(`
           id, nombre,
           locatario_propiedades (
-            propiedad_id, monto_base,
+            propiedad_id, monto_base, fecha_inicio,
             propiedades ( id, direccion, locador_id, locadores ( nombre ) )
           )
         `)
