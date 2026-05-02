@@ -188,12 +188,15 @@ export default function GenerarCobro() {
     const firstLp = loc.locatario_propiedades[0];
     const prop = firstLp?.propiedades;
     const locadorNombre = prop?.locadores?.nombre ?? "";
+    const periodo = calcularPeriodo(firstLp?.fecha_inicio ?? null);
     setForm((prev) => ({
       ...prev,
       locatario_id: loc.id,
       locatario: loc.nombre,
       propiedad: prop?.direccion ?? "",
       locador: locadorNombre,
+      periodoDesde: periodo.desde,
+      periodoHasta: periodo.hasta,
     }));
     if (firstLp?.monto_base) {
       setConceptos((prev) =>
@@ -207,7 +210,14 @@ export default function GenerarCobro() {
   const handlePropChange = (propDir: string) => {
     const lp = selectedLocatario?.locatario_propiedades.find((p) => p.propiedades?.direccion === propDir);
     const locadorNombre = lp?.propiedades?.locadores?.nombre ?? "";
-    setForm((prev) => ({ ...prev, propiedad: propDir, locador: locadorNombre }));
+    const periodo = calcularPeriodo(lp?.fecha_inicio ?? null);
+    setForm((prev) => ({
+      ...prev,
+      propiedad: propDir,
+      locador: locadorNombre,
+      periodoDesde: periodo.desde,
+      periodoHasta: periodo.hasta,
+    }));
     if (lp?.monto_base) {
       setConceptos((prev) =>
         prev.map((c) => c.key === "alquiler" ? { ...c, monto: Number(lp.monto_base) } : c)
