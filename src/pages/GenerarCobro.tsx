@@ -41,6 +41,7 @@ type LocatarioOption = {
   locatario_propiedades: {
     propiedad_id: string;
     monto_base: number;
+    fecha_inicio: string | null;
     propiedades?: {
       id: string;
       direccion: string;
@@ -49,6 +50,44 @@ type LocatarioOption = {
     } | null;
   }[];
 };
+
+// Calcula el período del recibo según el día de inicio del contrato.
+// - Si el contrato inicia día 1: del 1 al último día del mes actual.
+// - Si inicia otro día (ej. 6): del día 6 del mes actual al día 6 del mes siguiente.
+function calcularPeriodo(fechaInicio: string | null): { desde: string; hasta: string } {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth(); // 0-11
+
+  let dia = 1;
+  if (fechaInicio) {
+    const parts = fechaInicio.split("-");
+    if (parts.length === 3) dia = parseInt(parts[2], 10) || 1;
+  }
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  if (dia === 1) {
+    const ultimo = new Date(y, m + 1, 0).getDate();
+    return {
+      desde: `${y}-${pad(m + 1)}-01`,
+      hasta: `${y}-${pad(m + 1)}-${pad(ultimo)}`,
+    };
+  }
+
+  // Día N del mes actual al día N del mes siguiente
+  const desde = new Date(y, m, dia);
+  const hasta = new Date(y, m + 1, dia);
+  // Ajuste si el mes siguiente no tiene ese día (ej. 31 → último del mes)
+  const ultimoMesSig = new Date(y, m + 2, 0).getDate();
+  if (hasta.getDate() !== dia) {
+    hasta.setFullYear(y, m + 2, 0); // último día del mes siguiente
+  }
+  return {
+    desde: `${desde.getFullYear()}-${pad(desde.getMonth() + 1)}-${pad(desde.getDate())}`,
+    hasta: `${hasta.getFullYear()}-${pad(hasta.getMonth() + 1)}-${pad(hasta.getDate())}`,
+  };
+}
 
 export default function GenerarCobro() {
   const qc = useQueryClient();
@@ -82,7 +121,7 @@ export default function GenerarCobro() {
         .select(`
           id, nombre,
           locatario_propiedades (
-            propiedad_id, monto_base,
+            propiedad_id, monto_base, fecha_inicio,
             propiedades ( id, direccion, locador_id, locadores ( nombre ) )
           )
         `)
@@ -149,12 +188,15 @@ export default function GenerarCobro() {
     const firstLp = loc.locatario_propiedades[0];
     const prop = firstLp?.propiedades;
     const locadorNombre = prop?.locadores?.nombre ?? "";
+    const periodo = calcularPeriodo(firstLp?.fecha_inicio ?? null);
     setForm((prev) => ({
       ...prev,
       locatario_id: loc.id,
       locatario: loc.nombre,
       propiedad: prop?.direccion ?? "",
       locador: locadorNombre,
+      periodoDesde: periodo.desde,
+      periodoHasta: periodo.hasta,
     }));
     if (firstLp?.monto_base) {
       setConceptos((prev) =>
@@ -168,7 +210,14 @@ export default function GenerarCobro() {
   const handlePropChange = (propDir: string) => {
     const lp = selectedLocatario?.locatario_propiedades.find((p) => p.propiedades?.direccion === propDir);
     const locadorNombre = lp?.propiedades?.locadores?.nombre ?? "";
-    setForm((prev) => ({ ...prev, propiedad: propDir, locador: locadorNombre }));
+    const periodo = calcularPeriodo(lp?.fecha_inicio ?? null);
+    setForm((prev) => ({
+      ...prev,
+      propiedad: propDir,
+      locador: locadorNombre,
+      periodoDesde: periodo.desde,
+      periodoHasta: periodo.hasta,
+    }));
     if (lp?.monto_base) {
       setConceptos((prev) =>
         prev.map((c) => c.key === "alquiler" ? { ...c, monto: Number(lp.monto_base) } : c)
