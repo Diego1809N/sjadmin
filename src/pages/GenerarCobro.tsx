@@ -325,7 +325,7 @@ export default function GenerarCobro() {
       </div>
 
       {/* Footer: total + signature */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderTop: "1.5px solid #333", paddingTop: "6px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", paddingTop: "6px" }}>
         <strong style={{ fontSize: "16px", whiteSpace: "nowrap" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
         <div style={{ textAlign: "right", fontSize: "8px", color: "#666", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
           <div style={{ height: "18px" }}></div>
