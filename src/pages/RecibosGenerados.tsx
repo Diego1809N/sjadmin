@@ -139,7 +139,7 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
       </div>
 
       {/* Footer: total + signature */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderTop: "1.5px solid #333", paddingTop: "6px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", paddingTop: "6px" }}>
         <strong style={{ fontSize: "18px", whiteSpace: "nowrap" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
         <div style={{ textAlign: "right", fontSize: "10px", color: "#666", marginRight: "40px", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
           <div style={{ height: "22px" }}></div>
