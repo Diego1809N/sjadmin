@@ -59,6 +59,7 @@ export default function Index() {
       case "recibos-generados": return <RecibosGenerados />;
       case "actualizar-montos": return <ActualizarMontos />;
       case "servicios": return <Servicios />;
+      case "contratos": return <Contratos />;
       default: return <Dashboard onNavigate={setPage} />;
     }
   };
