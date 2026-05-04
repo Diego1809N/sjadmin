@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      contratos: {
+        Row: {
+          created_at: string
+          datos_extra: Json | null
+          deposito: number | null
+          destino: string | null
+          fecha_fin: string | null
+          fecha_inicio: string | null
+          garantias: string | null
+          id: string
+          indice_ajuste: string | null
+          intervalo_ajuste_meses: number | null
+          locador_dni: string | null
+          locador_domicilio: string | null
+          locador_nombre: string
+          locatario_dni: string | null
+          locatario_domicilio: string | null
+          locatario_nombre: string
+          monto: number
+          observaciones: string | null
+          plazo_meses: number | null
+          propiedad_descripcion: string | null
+          propiedad_direccion: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          datos_extra?: Json | null
+          deposito?: number | null
+          destino?: string | null
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          garantias?: string | null
+          id?: string
+          indice_ajuste?: string | null
+          intervalo_ajuste_meses?: number | null
+          locador_dni?: string | null
+          locador_domicilio?: string | null
+          locador_nombre: string
+          locatario_dni?: string | null
+          locatario_domicilio?: string | null
+          locatario_nombre: string
+          monto?: number
+          observaciones?: string | null
+          plazo_meses?: number | null
+          propiedad_descripcion?: string | null
+          propiedad_direccion: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          datos_extra?: Json | null
+          deposito?: number | null
+          destino?: string | null
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          garantias?: string | null
+          id?: string
+          indice_ajuste?: string | null
+          intervalo_ajuste_meses?: number | null
+          locador_dni?: string | null
+          locador_domicilio?: string | null
+          locador_nombre?: string
+          locatario_dni?: string | null
+          locatario_domicilio?: string | null
+          locatario_nombre?: string
+          monto?: number
+          observaciones?: string | null
+          plazo_meses?: number | null
+          propiedad_descripcion?: string | null
+          propiedad_direccion?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       historial_precios: {
         Row: {
           created_at: string
