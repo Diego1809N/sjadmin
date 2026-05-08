@@ -313,21 +313,28 @@ export default function GenerarCobro() {
         </div>
       </div>
 
-      {/* Concepts table */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
-        <div style={{ background: "#f4f4f4", borderRadius: "4px", padding: "5px 10px" }}>
+      {/* Concepts table — centered vertically */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "6px 0" }}>
+        <div style={{ background: "#f4f4f4", borderRadius: "4px", padding: "8px 14px", maxWidth: "380px", margin: "0 auto", width: "100%" }}>
           {conceptosConMonto.map((c) => (
-            <div key={c.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "2px 0", borderBottom: "0.5px solid #e0e0e0" }}>
-              <span style={{ fontSize: "10px" }}>{c.label}</span>
-              <strong style={{ fontSize: "10px" }}>${c.monto.toLocaleString("es-AR")}</strong>
+            <div key={c.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "3px 0", borderBottom: "0.5px solid #e0e0e0" }}>
+              <span style={{ fontSize: "12px", fontWeight: 500 }}>{c.label}</span>
+              <strong style={{ fontSize: "12px" }}>${c.monto.toLocaleString("es-AR")}</strong>
             </div>
           ))}
         </div>
+        {/* TOTAL debajo, alineado a la derecha */}
+        <div style={{ maxWidth: "380px", margin: "6px auto 0", width: "100%", textAlign: "right" }}>
+          <strong style={{ fontSize: "14px" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
+        </div>
       </div>
 
-      {/* Footer: total + signature */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", paddingTop: "6px" }}>
-        <strong style={{ fontSize: "16px", whiteSpace: "nowrap" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
+      {/* Footer: total en letras + firma */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", paddingTop: "6px", gap: "16px" }}>
+        <div style={{ fontSize: "10px", color: "#333", maxWidth: "60%", lineHeight: 1.3 }}>
+          <span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Son</span><br />
+          <em style={{ fontStyle: "italic", textTransform: "capitalize" }}>{numeroALetras(total)}</em>
+        </div>
         <div style={{ textAlign: "right", fontSize: "8px", color: "#666", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
           <div style={{ height: "18px" }}></div>
           <div style={{ borderBottom: "1px solid #333", width: "120px" }}></div>
