@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Trash2, Download, Check, X, Search, Loader2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { numeroALetras } from "@/lib/numeroALetras";
 
 type Recibo = {
   id: string;
