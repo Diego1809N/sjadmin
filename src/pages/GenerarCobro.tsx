@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileText, Printer, Search, Plus, Trash2 } from "lucide-react";
+import { numeroALetras } from "@/lib/numeroALetras";
 
 // Helper: format date string (yyyy-mm-dd) → dd/mm/yyyy
 function fmtDate(val: string) {
