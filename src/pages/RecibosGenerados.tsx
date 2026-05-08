@@ -137,11 +137,18 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
             </div>
           ))}
         </div>
+        {/* TOTAL debajo de los conceptos, alineado a la derecha */}
+        <div style={{ maxWidth: "480px", margin: "8px auto 0", width: "100%", textAlign: "right" }}>
+          <strong style={{ fontSize: "18px" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
+        </div>
       </div>
 
-      {/* Footer: total + signature */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", paddingTop: "6px" }}>
-        <strong style={{ fontSize: "18px", whiteSpace: "nowrap" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
+      {/* Footer: total en letras + firma */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", paddingTop: "6px", gap: "20px" }}>
+        <div style={{ fontSize: "11px", color: "#333", maxWidth: "60%", lineHeight: 1.3 }}>
+          <span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Son</span><br />
+          <em style={{ fontStyle: "italic", textTransform: "capitalize" }}>{numeroALetras(total)}</em>
+        </div>
         <div style={{ textAlign: "right", fontSize: "10px", color: "#666", marginRight: "40px", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
           <div style={{ height: "22px" }}></div>
           <div style={{ borderBottom: "1px solid #333", width: "160px" }}></div>
