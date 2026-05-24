@@ -528,16 +528,16 @@ export default function Locatarios() {
                         </div>
                         <div>
                           <label className="block text-xs text-muted-foreground mb-1">Monto actual (ARS)</label>
-                          <input type="number" value={pf.monto_base} onChange={(e) => updatePropForm(idx, "monto_base", Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="85000" />
+                          <input type="number" value={pf.monto_base || ""} onWheel={(e) => e.currentTarget.blur()} onChange={(e) => updatePropForm(idx, "monto_base", e.target.value === "" ? 0 : Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="85000" />
                         </div>
                         <div>
                           <label className="block text-xs text-muted-foreground mb-1">Monto nuevo (ARS)</label>
-                          <input type="number" value={pf.monto_nuevo || ""} onChange={(e) => updatePropForm(idx, "monto_nuevo", Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 border-primary/30" placeholder="Dejar vacío si no hay ajuste" />
+                          <input type="number" value={pf.monto_nuevo || ""} onWheel={(e) => e.currentTarget.blur()} onChange={(e) => updatePropForm(idx, "monto_nuevo", e.target.value === "" ? 0 : Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 border-primary/30" placeholder="Dejar vacío si no hay ajuste" />
                           <p className="text-xs text-muted-foreground mt-0.5 italic">Completar solo al aplicar un ajuste</p>
                         </div>
                         <div>
                           <label className="block text-xs text-muted-foreground mb-1">Ajuste cada (meses)</label>
-                          <input type="number" min={1} max={24} value={pf.intervalo_ajuste_meses} onChange={(e) => updatePropForm(idx, "intervalo_ajuste_meses", Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                          <input type="number" min={1} max={24} value={pf.intervalo_ajuste_meses || ""} onWheel={(e) => e.currentTarget.blur()} onChange={(e) => updatePropForm(idx, "intervalo_ajuste_meses", e.target.value === "" ? 0 : Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" />
                         </div>
                         <div className="col-span-2">
                           <label className="block text-xs text-muted-foreground mb-1">Índice de ajuste</label>
