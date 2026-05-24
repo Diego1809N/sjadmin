@@ -399,11 +399,11 @@ export default function Contratos() {
               <CardHeader className="pb-3"><CardTitle className="text-base">Plazo y precio</CardTitle></CardHeader>
               <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div><Label>Fecha inicio</Label><Input type="date" value={form.fecha_inicio} onChange={e => setForm({ ...form, fecha_inicio: e.target.value })} /></div>
-                <div><Label>Plazo (meses)</Label><Input type="number" value={form.plazo_meses} onChange={e => setForm({ ...form, plazo_meses: Number(e.target.value) })} /></div>
+                <div><Label>Plazo (meses)</Label><Input type="number" value={form.plazo_meses || ""} onChange={e => setForm({ ...form, plazo_meses: e.target.value === "" ? 0 : Number(e.target.value) })} /></div>
                 <div><Label>Fecha fin</Label><Input type="date" value={form.fecha_fin} onChange={e => setForm({ ...form, fecha_fin: e.target.value })} /></div>
                 <div></div>
-                <div><Label>Monto mensual</Label><Input type="number" value={form.monto} onChange={e => setForm({ ...form, monto: Number(e.target.value) })} /></div>
-                <div><Label>Depósito en garantía</Label><Input type="number" value={form.deposito} onChange={e => setForm({ ...form, deposito: Number(e.target.value) })} /></div>
+                <div><Label>Monto mensual</Label><Input type="number" value={form.monto || ""} onChange={e => setForm({ ...form, monto: e.target.value === "" ? 0 : Number(e.target.value) })} /></div>
+                <div><Label>Depósito en garantía</Label><Input type="number" value={form.deposito || ""} onChange={e => setForm({ ...form, deposito: e.target.value === "" ? 0 : Number(e.target.value) })} /></div>
                 <div>
                   <Label>Índice ajuste</Label>
                   <Select value={form.indice_ajuste} onValueChange={v => setForm({ ...form, indice_ajuste: v })}>
@@ -411,7 +411,7 @@ export default function Contratos() {
                     <SelectContent>{INDICES.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div><Label>Cada (meses)</Label><Input type="number" value={form.intervalo_ajuste_meses} onChange={e => setForm({ ...form, intervalo_ajuste_meses: Number(e.target.value) })} /></div>
+                <div><Label>Cada (meses)</Label><Input type="number" value={form.intervalo_ajuste_meses || ""} onChange={e => setForm({ ...form, intervalo_ajuste_meses: e.target.value === "" ? 0 : Number(e.target.value) })} /></div>
               </CardContent>
             </Card>
 

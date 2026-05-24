@@ -511,7 +511,8 @@ export default function GenerarCobro() {
                   type="number"
                   min={0}
                   value={c.monto || ""}
-                  onChange={(e) => updateMonto(c.key, Number(e.target.value))}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  onChange={(e) => updateMonto(c.key, e.target.value === "" ? 0 : Number(e.target.value))}
                   placeholder="0"
                   className="flex-1 px-3 py-2 text-sm bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
                 />
