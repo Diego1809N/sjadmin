@@ -594,13 +594,8 @@ export default function Locatarios() {
                           <input type="date" value={pf.fecha_fin} onChange={(e) => updatePropForm(idx, "fecha_fin", e.target.value)} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" />
                         </div>
                         <div>
-                          <label className="block text-xs text-muted-foreground mb-1">Monto actual (ARS)</label>
+                          <label className="block text-xs text-muted-foreground mb-1">Monto inicial (ARS)</label>
                           <input type="number" value={pf.monto_base || ""} onWheel={(e) => e.currentTarget.blur()} onChange={(e) => updatePropForm(idx, "monto_base", e.target.value === "" ? 0 : Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="85000" />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-muted-foreground mb-1">Monto nuevo (ARS)</label>
-                          <input type="number" value={pf.monto_nuevo || ""} onWheel={(e) => e.currentTarget.blur()} onChange={(e) => updatePropForm(idx, "monto_nuevo", e.target.value === "" ? 0 : Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 border-primary/30" placeholder="Dejar vacío si no hay ajuste" />
-                          <p className="text-xs text-muted-foreground mt-0.5 italic">Completar solo al aplicar un ajuste</p>
                         </div>
                         <div>
                           <label className="block text-xs text-muted-foreground mb-1">Ajuste cada (meses)</label>
@@ -617,42 +612,79 @@ export default function Locatarios() {
                           <input value={pf.notas} onChange={(e) => updatePropForm(idx, "notas", e.target.value)} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="Cláusulas especiales, etc." />
                         </div>
                       </div>
+
+                      {/* Grilla de períodos de ajuste */}
+                      {(() => {
+                        const periodos = getPeriodos(pf.fecha_inicio, pf.fecha_fin || null, pf.intervalo_ajuste_meses);
+                        if (periodos.length === 0) {
+                          return <p className="text-xs text-muted-foreground italic">Completá fecha de inicio, fin e intervalo para ver los períodos de ajuste.</p>;
+                        }
+                        const existingLp = editing?.locatario_propiedades.find((lp) => lp.propiedad_id === pf.propiedad_id);
+                        const historialProp = (historial || [])
+                          .filter((h: any) => h.propiedad_id === pf.propiedad_id)
+                          .sort((a: any, b: any) => (a.fecha_desde || "").localeCompare(b.fecha_desde || ""));
+                        // current period index = cuántos ajustes ya se hicieron (cada uno crea 1 historial)
+                        const currentIdx = existingLp ? historialProp.length : 0;
+                        return (
+                          <div className="mt-2">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Plan de ajustes ({periodos.length} períodos)</p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                              {periodos.map((fecha, pIdx) => {
+                                const isPast = pIdx < currentIdx;
+                                const isCurrent = pIdx === currentIdx;
+                                const isFuture = pIdx > currentIdx;
+                                const isNextEditable = pIdx === currentIdx + 1;
+                                let valor: number | "" = "";
+                                let label = "";
+                                let bg = "bg-card";
+                                if (isPast) {
+                                  valor = Number(historialProp[pIdx]?.monto ?? 0);
+                                  label = "Aplicado";
+                                  bg = "bg-secondary/60";
+                                } else if (isCurrent) {
+                                  valor = pf.monto_base;
+                                  label = pIdx === 0 ? "Inicial / Actual" : "Actual";
+                                  bg = "bg-primary/10 border-primary/40";
+                                } else if (isFuture) {
+                                  valor = pf.pending_ajustes[pIdx] || "";
+                                  label = isNextEditable ? "Próximo ajuste" : "Futuro";
+                                }
+                                return (
+                                  <div key={pIdx} className={`border border-border rounded-lg p-2 ${bg}`}>
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-[10px] font-semibold text-muted-foreground uppercase">Período {pIdx + 1}</span>
+                                      <span className="text-[10px] text-muted-foreground">{label}</span>
+                                    </div>
+                                    <p className="text-[11px] text-foreground mb-1">{fmtDDMMYYYY(fecha)}</p>
+                                    <input
+                                      type="number"
+                                      value={valor === "" ? "" : valor}
+                                      onWheel={(e) => e.currentTarget.blur()}
+                                      readOnly={isPast || isCurrent || (isFuture && !isNextEditable)}
+                                      disabled={isFuture && !isNextEditable}
+                                      onChange={(e) => {
+                                        const v = e.target.value === "" ? 0 : Number(e.target.value);
+                                        setPropForms((prev) => prev.map((p, i) => i === idx ? { ...p, pending_ajustes: { ...p.pending_ajustes, [pIdx]: v } } : p));
+                                      }}
+                                      placeholder={isNextEditable ? "Nuevo monto" : "—"}
+                                      className="w-full px-2 py-1 text-xs bg-card border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            {!existingLp && (
+                              <p className="text-[11px] text-muted-foreground italic mt-2">Los ajustes futuros podrán cargarse luego de guardar el contrato.</p>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>
               </div>
               </div>
 
-              {/* Price History */}
-              {!isNew && historial.length > 0 && (
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => setShowHistory(showHistory ? null : editing.id)}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors"
-                  >
-                    <History className="w-3.5 h-3.5" />
-                    Historial de precios ({historial.length})
-                  </button>
-                  {showHistory === editing.id && (
-                    <div className="mt-2 space-y-1.5">
-                      {historial.map((h) => {
-                        const prop = propiedades.find((p) => p.id === h.propiedad_id);
-                        return (
-                          <div key={h.id} className="flex items-center justify-between bg-secondary/50 rounded-lg px-3 py-2 text-xs">
-                            <span className="text-muted-foreground">
-                              {prop?.direccion ?? "Propiedad eliminada"} — <strong className="text-foreground">${Number(h.monto).toLocaleString("es-AR")}</strong>
-                            </span>
-                            <span className="text-muted-foreground">
-                              {h.fecha_desde} → {h.fecha_hasta}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
             <div className="px-6 py-4 border-t border-border flex items-center justify-between">
               {!isNew && (
                 <button
