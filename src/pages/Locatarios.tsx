@@ -59,10 +59,10 @@ type PropForm = {
   fecha_inicio: string;
   fecha_fin: string;
   monto_base: number;
-  monto_nuevo: number;
   intervalo_ajuste_meses: number;
   indice_actualizacion: string;
   notas: string;
+  pending_ajustes: Record<number, number>; // periodo idx → monto nuevo
 };
 
 const emptyForm = {
@@ -74,11 +74,63 @@ const emptyPropForm: PropForm = {
   fecha_inicio: "",
   fecha_fin: "",
   monto_base: 0,
-  monto_nuevo: 0,
   intervalo_ajuste_meses: 3,
   indice_actualizacion: "ICL",
   notas: "",
+  pending_ajustes: {},
 };
+
+function fmtDDMMYYYY(d: Date) {
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+function getPeriodos(fechaInicio: string, fechaFin: string | null, intervalo: number): Date[] {
+  if (!fechaInicio || !intervalo) return [];
+  const start = new Date(fechaInicio);
+  let totalMonths = 12;
+  if (fechaFin) {
+    const end = new Date(fechaFin);
+    totalMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
+  }
+  const n = Math.max(1, Math.ceil(totalMonths / intervalo));
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date(start);
+    d.setMonth(d.getMonth() + i * intervalo);
+    return d;
+  });
+}
+
+function getRowStatus(l: LocatarioConProps): "sin-fechas" | "vence" | "actualiza" | "ok" {
+  if (l.locatario_propiedades.length === 0) return "sin-fechas";
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const in60 = new Date(today); in60.setDate(in60.getDate() + 60);
+  const in30 = new Date(today); in30.setDate(in30.getDate() + 30);
+  let status: "sin-fechas" | "vence" | "actualiza" | "ok" = "ok";
+  let anyWithDates = false;
+  for (const lp of l.locatario_propiedades) {
+    if (!lp.fecha_inicio && !lp.fecha_fin) continue;
+    anyWithDates = true;
+    if (lp.fecha_fin) {
+      const fin = new Date(lp.fecha_fin); fin.setHours(0, 0, 0, 0);
+      if (fin <= in60) { status = "vence"; }
+    }
+    if (status !== "vence" && lp.fecha_inicio && lp.intervalo_ajuste_meses) {
+      const inicio = new Date(lp.fecha_inicio);
+      let next = new Date(inicio);
+      while (next <= today) next.setMonth(next.getMonth() + lp.intervalo_ajuste_meses);
+      if (lp.fecha_ultimo_ajuste) {
+        const lastAdj = new Date(lp.fecha_ultimo_ajuste); lastAdj.setHours(0, 0, 0, 0);
+        const periodoInicio = new Date(next); periodoInicio.setMonth(periodoInicio.getMonth() - lp.intervalo_ajuste_meses);
+        if (lastAdj >= periodoInicio) next.setMonth(next.getMonth() + lp.intervalo_ajuste_meses);
+      }
+      if (next <= in30) status = "actualiza";
+    }
+  }
+  if (!anyWithDates) return "sin-fechas";
+  return status;
+}
 
 function getUpcomingAdjustments(locatarios: LocatarioConProps[]) {
   const today = new Date();
