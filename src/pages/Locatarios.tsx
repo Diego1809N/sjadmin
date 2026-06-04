@@ -357,10 +357,10 @@ export default function Locatarios() {
       fecha_inicio: lp.fecha_inicio ?? "",
       fecha_fin: lp.fecha_fin ?? "",
       monto_base: Number(lp.monto_base),
-      monto_nuevo: 0,
       intervalo_ajuste_meses: lp.intervalo_ajuste_meses ?? 3,
       indice_actualizacion: lp.indice_actualizacion ?? "ICL",
       notas: lp.notas ?? "",
+      pending_ajustes: {},
     })));
     setRemovedLpIds([]);
   };
