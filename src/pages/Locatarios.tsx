@@ -259,28 +259,43 @@ export default function Locatarios() {
       // Upsert property relations
       for (const pf of propForms) {
         if (!pf.propiedad_id) continue;
-        const finalMonto = pf.monto_nuevo > 0 ? pf.monto_nuevo : pf.monto_base;
-        const applyAdjust = pf.monto_nuevo > 0;
         const existingLp = editing?.locatario_propiedades.find((lp) => lp.propiedad_id === pf.propiedad_id);
+
+        // Aplicar ajustes pendientes ordenados por período (asc)
+        const pendings = Object.entries(pf.pending_ajustes || {})
+          .map(([k, v]) => ({ idx: Number(k), monto: Number(v) }))
+          .filter((p) => p.monto > 0)
+          .sort((a, b) => a.idx - b.idx);
+
+        let currentMonto = pf.monto_base;
+        let currentFechaUltimoAjuste: string | null = existingLp?.fecha_ultimo_ajuste ?? null;
+        const periodos = getPeriodos(pf.fecha_inicio, pf.fecha_fin || null, pf.intervalo_ajuste_meses);
+
         if (existingLp && !isNew) {
-          // Save old price to history if monto is changing
-          if (applyAdjust && Number(existingLp.monto_base) !== finalMonto) {
+          // Procesar cada ajuste pendiente: guardar histórico y actualizar monto
+          for (const p of pendings) {
+            const periodoFecha = periodos[p.idx];
+            if (!periodoFecha) continue;
+            const periodoFechaISO = periodoFecha.toISOString().split("T")[0];
             await supabase.from("historial_precios").insert({
               locatario_id: locId!,
               propiedad_id: pf.propiedad_id,
-              monto: Number(existingLp.monto_base),
-              fecha_desde: existingLp.fecha_ultimo_ajuste || existingLp.fecha_inicio || new Date().toISOString().split("T")[0],
-              fecha_hasta: new Date().toISOString().split("T")[0],
+              monto: Number(currentMonto),
+              fecha_desde: currentFechaUltimoAjuste || existingLp.fecha_inicio || new Date().toISOString().split("T")[0],
+              fecha_hasta: periodoFechaISO,
             });
+            currentMonto = p.monto;
+            currentFechaUltimoAjuste = periodoFechaISO;
           }
+
           const { error } = await supabase.from("locatario_propiedades").update({
             fecha_inicio: pf.fecha_inicio || null,
             fecha_fin: pf.fecha_fin || null,
-            monto_base: finalMonto,
+            monto_base: currentMonto,
             intervalo_ajuste_meses: pf.intervalo_ajuste_meses,
             indice_actualizacion: pf.indice_actualizacion,
             notas: pf.notas || null,
-            ...(applyAdjust ? { fecha_ultimo_ajuste: new Date().toISOString().split("T")[0] } : {}),
+            ...(pendings.length > 0 ? { fecha_ultimo_ajuste: currentFechaUltimoAjuste } : {}),
           }).eq("id", existingLp.id);
           if (error) throw error;
         } else {
@@ -289,7 +304,7 @@ export default function Locatarios() {
             propiedad_id: pf.propiedad_id,
             fecha_inicio: pf.fecha_inicio || null,
             fecha_fin: pf.fecha_fin || null,
-            monto_base: finalMonto,
+            monto_base: pf.monto_base,
             intervalo_ajuste_meses: pf.intervalo_ajuste_meses,
             indice_actualizacion: pf.indice_actualizacion,
             notas: pf.notas || null,
