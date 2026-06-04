@@ -470,8 +470,17 @@ export default function Locatarios() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((l) => (
-                <tr key={l.id} className="border-b border-border last:border-0 hover:bg-secondary/50 transition-colors">
+              {filtered.map((l) => {
+                const st = getRowStatus(l);
+                const stStyles: Record<string, { bg: string; border: string; badgeBg: string; badgeText: string; label: string }> = {
+                  "vence":     { bg: "bg-red-500/5",    border: "border-l-4 border-l-red-500",    badgeBg: "bg-red-500/15",    badgeText: "text-red-600",    label: "Vence contrato" },
+                  "actualiza": { bg: "bg-amber-500/5",  border: "border-l-4 border-l-amber-500",  badgeBg: "bg-amber-500/15",  badgeText: "text-amber-700",  label: "Actualiza" },
+                  "sin-fechas":{ bg: "bg-slate-500/5",  border: "border-l-4 border-l-slate-400",  badgeBg: "bg-slate-500/15",  badgeText: "text-slate-600",  label: "Sin contrato" },
+                  "ok":        { bg: "",                 border: "",                                badgeBg: "",                  badgeText: "",                label: "" },
+                };
+                const s = stStyles[st];
+                return (
+                <tr key={l.id} className={`border-b border-border last:border-0 hover:bg-secondary/50 transition-colors ${s.bg} ${s.border}`}>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div
@@ -481,7 +490,14 @@ export default function Locatarios() {
                         {l.nombre.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-foreground">{l.nombre}</p>
+                        <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                          {l.nombre}
+                          {s.label && (
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${s.badgeBg} ${s.badgeText}`}>
+                              {s.label}
+                            </span>
+                          )}
+                        </p>
                         <p className="text-xs text-muted-foreground">{l.email ?? ""}</p>
                       </div>
                     </div>
@@ -495,7 +511,8 @@ export default function Locatarios() {
                     </button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
               {filtered.length === 0 && (
                 <tr><td colSpan={5} className="px-6 py-8 text-sm text-muted-foreground text-center">No hay locatarios registrados.</td></tr>
               )}
