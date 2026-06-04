@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Users, Pencil, X, Trash2, Bell, Search, Loader2, Printer, History } from "lucide-react";
+import { Users, Pencil, X, Trash2, Bell, Search, Loader2, Printer } from "lucide-react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 function exportToCSV(filename: string, rows: Record<string, string | number | null | undefined>[]) {
@@ -59,10 +59,10 @@ type PropForm = {
   fecha_inicio: string;
   fecha_fin: string;
   monto_base: number;
-  monto_nuevo: number;
   intervalo_ajuste_meses: number;
   indice_actualizacion: string;
   notas: string;
+  pending_ajustes: Record<number, number>; // periodo idx → monto nuevo
 };
 
 const emptyForm = {
@@ -74,11 +74,63 @@ const emptyPropForm: PropForm = {
   fecha_inicio: "",
   fecha_fin: "",
   monto_base: 0,
-  monto_nuevo: 0,
   intervalo_ajuste_meses: 3,
   indice_actualizacion: "ICL",
   notas: "",
+  pending_ajustes: {},
 };
+
+function fmtDDMMYYYY(d: Date) {
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+function getPeriodos(fechaInicio: string, fechaFin: string | null, intervalo: number): Date[] {
+  if (!fechaInicio || !intervalo) return [];
+  const start = new Date(fechaInicio);
+  let totalMonths = 12;
+  if (fechaFin) {
+    const end = new Date(fechaFin);
+    totalMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
+  }
+  const n = Math.max(1, Math.ceil(totalMonths / intervalo));
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date(start);
+    d.setMonth(d.getMonth() + i * intervalo);
+    return d;
+  });
+}
+
+function getRowStatus(l: LocatarioConProps): "sin-fechas" | "vence" | "actualiza" | "ok" {
+  if (l.locatario_propiedades.length === 0) return "sin-fechas";
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const in60 = new Date(today); in60.setDate(in60.getDate() + 60);
+  const in30 = new Date(today); in30.setDate(in30.getDate() + 30);
+  let status: "sin-fechas" | "vence" | "actualiza" | "ok" = "ok";
+  let anyWithDates = false;
+  for (const lp of l.locatario_propiedades) {
+    if (!lp.fecha_inicio && !lp.fecha_fin) continue;
+    anyWithDates = true;
+    if (lp.fecha_fin) {
+      const fin = new Date(lp.fecha_fin); fin.setHours(0, 0, 0, 0);
+      if (fin <= in60) { status = "vence"; }
+    }
+    if (status !== "vence" && lp.fecha_inicio && lp.intervalo_ajuste_meses) {
+      const inicio = new Date(lp.fecha_inicio);
+      let next = new Date(inicio);
+      while (next <= today) next.setMonth(next.getMonth() + lp.intervalo_ajuste_meses);
+      if (lp.fecha_ultimo_ajuste) {
+        const lastAdj = new Date(lp.fecha_ultimo_ajuste); lastAdj.setHours(0, 0, 0, 0);
+        const periodoInicio = new Date(next); periodoInicio.setMonth(periodoInicio.getMonth() - lp.intervalo_ajuste_meses);
+        if (lastAdj >= periodoInicio) next.setMonth(next.getMonth() + lp.intervalo_ajuste_meses);
+      }
+      if (next <= in30) status = "actualiza";
+    }
+  }
+  if (!anyWithDates) return "sin-fechas";
+  return status;
+}
 
 function getUpcomingAdjustments(locatarios: LocatarioConProps[]) {
   const today = new Date();
@@ -124,7 +176,6 @@ export default function Locatarios() {
   const [search, setSearch] = useState("");
   const [propForms, setPropForms] = useState<PropForm[]>([]);
   const [removedLpIds, setRemovedLpIds] = useState<string[]>([]);
-  const [showHistory, setShowHistory] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // ─── Queries ───────────────────────────────────────────────────────────────
@@ -207,28 +258,43 @@ export default function Locatarios() {
       // Upsert property relations
       for (const pf of propForms) {
         if (!pf.propiedad_id) continue;
-        const finalMonto = pf.monto_nuevo > 0 ? pf.monto_nuevo : pf.monto_base;
-        const applyAdjust = pf.monto_nuevo > 0;
         const existingLp = editing?.locatario_propiedades.find((lp) => lp.propiedad_id === pf.propiedad_id);
+
+        // Aplicar ajustes pendientes ordenados por período (asc)
+        const pendings = Object.entries(pf.pending_ajustes || {})
+          .map(([k, v]) => ({ idx: Number(k), monto: Number(v) }))
+          .filter((p) => p.monto > 0)
+          .sort((a, b) => a.idx - b.idx);
+
+        let currentMonto = pf.monto_base;
+        let currentFechaUltimoAjuste: string | null = existingLp?.fecha_ultimo_ajuste ?? null;
+        const periodos = getPeriodos(pf.fecha_inicio, pf.fecha_fin || null, pf.intervalo_ajuste_meses);
+
         if (existingLp && !isNew) {
-          // Save old price to history if monto is changing
-          if (applyAdjust && Number(existingLp.monto_base) !== finalMonto) {
+          // Procesar cada ajuste pendiente: guardar histórico y actualizar monto
+          for (const p of pendings) {
+            const periodoFecha = periodos[p.idx];
+            if (!periodoFecha) continue;
+            const periodoFechaISO = periodoFecha.toISOString().split("T")[0];
             await supabase.from("historial_precios").insert({
               locatario_id: locId!,
               propiedad_id: pf.propiedad_id,
-              monto: Number(existingLp.monto_base),
-              fecha_desde: existingLp.fecha_ultimo_ajuste || existingLp.fecha_inicio || new Date().toISOString().split("T")[0],
-              fecha_hasta: new Date().toISOString().split("T")[0],
+              monto: Number(currentMonto),
+              fecha_desde: currentFechaUltimoAjuste || existingLp.fecha_inicio || new Date().toISOString().split("T")[0],
+              fecha_hasta: periodoFechaISO,
             });
+            currentMonto = p.monto;
+            currentFechaUltimoAjuste = periodoFechaISO;
           }
+
           const { error } = await supabase.from("locatario_propiedades").update({
             fecha_inicio: pf.fecha_inicio || null,
             fecha_fin: pf.fecha_fin || null,
-            monto_base: finalMonto,
+            monto_base: currentMonto,
             intervalo_ajuste_meses: pf.intervalo_ajuste_meses,
             indice_actualizacion: pf.indice_actualizacion,
             notas: pf.notas || null,
-            ...(applyAdjust ? { fecha_ultimo_ajuste: new Date().toISOString().split("T")[0] } : {}),
+            ...(pendings.length > 0 ? { fecha_ultimo_ajuste: currentFechaUltimoAjuste } : {}),
           }).eq("id", existingLp.id);
           if (error) throw error;
         } else {
@@ -237,7 +303,7 @@ export default function Locatarios() {
             propiedad_id: pf.propiedad_id,
             fecha_inicio: pf.fecha_inicio || null,
             fecha_fin: pf.fecha_fin || null,
-            monto_base: finalMonto,
+            monto_base: pf.monto_base,
             intervalo_ajuste_meses: pf.intervalo_ajuste_meses,
             indice_actualizacion: pf.indice_actualizacion,
             notas: pf.notas || null,
@@ -290,10 +356,10 @@ export default function Locatarios() {
       fecha_inicio: lp.fecha_inicio ?? "",
       fecha_fin: lp.fecha_fin ?? "",
       monto_base: Number(lp.monto_base),
-      monto_nuevo: 0,
       intervalo_ajuste_meses: lp.intervalo_ajuste_meses ?? 3,
       indice_actualizacion: lp.indice_actualizacion ?? "ICL",
       notas: lp.notas ?? "",
+      pending_ajustes: {},
     })));
     setRemovedLpIds([]);
   };
@@ -403,8 +469,17 @@ export default function Locatarios() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((l) => (
-                <tr key={l.id} className="border-b border-border last:border-0 hover:bg-secondary/50 transition-colors">
+              {filtered.map((l) => {
+                const st = getRowStatus(l);
+                const stStyles: Record<string, { bg: string; border: string; badgeBg: string; badgeText: string; label: string }> = {
+                  "vence":     { bg: "bg-red-500/5",    border: "border-l-4 border-l-red-500",    badgeBg: "bg-red-500/15",    badgeText: "text-red-600",    label: "Vence contrato" },
+                  "actualiza": { bg: "bg-amber-500/5",  border: "border-l-4 border-l-amber-500",  badgeBg: "bg-amber-500/15",  badgeText: "text-amber-700",  label: "Actualiza" },
+                  "sin-fechas":{ bg: "bg-slate-500/5",  border: "border-l-4 border-l-slate-400",  badgeBg: "bg-slate-500/15",  badgeText: "text-slate-600",  label: "Sin contrato" },
+                  "ok":        { bg: "",                 border: "",                                badgeBg: "",                  badgeText: "",                label: "" },
+                };
+                const s = stStyles[st];
+                return (
+                <tr key={l.id} className={`border-b border-border last:border-0 hover:bg-secondary/50 transition-colors ${s.bg} ${s.border}`}>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div
@@ -414,7 +489,14 @@ export default function Locatarios() {
                         {l.nombre.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-foreground">{l.nombre}</p>
+                        <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                          {l.nombre}
+                          {s.label && (
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${s.badgeBg} ${s.badgeText}`}>
+                              {s.label}
+                            </span>
+                          )}
+                        </p>
                         <p className="text-xs text-muted-foreground">{l.email ?? ""}</p>
                       </div>
                     </div>
@@ -428,7 +510,8 @@ export default function Locatarios() {
                     </button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
               {filtered.length === 0 && (
                 <tr><td colSpan={5} className="px-6 py-8 text-sm text-muted-foreground text-center">No hay locatarios registrados.</td></tr>
               )}
@@ -527,13 +610,8 @@ export default function Locatarios() {
                           <input type="date" value={pf.fecha_fin} onChange={(e) => updatePropForm(idx, "fecha_fin", e.target.value)} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" />
                         </div>
                         <div>
-                          <label className="block text-xs text-muted-foreground mb-1">Monto actual (ARS)</label>
+                          <label className="block text-xs text-muted-foreground mb-1">Monto inicial (ARS)</label>
                           <input type="number" value={pf.monto_base || ""} onWheel={(e) => e.currentTarget.blur()} onChange={(e) => updatePropForm(idx, "monto_base", e.target.value === "" ? 0 : Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="85000" />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-muted-foreground mb-1">Monto nuevo (ARS)</label>
-                          <input type="number" value={pf.monto_nuevo || ""} onWheel={(e) => e.currentTarget.blur()} onChange={(e) => updatePropForm(idx, "monto_nuevo", e.target.value === "" ? 0 : Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 border-primary/30" placeholder="Dejar vacío si no hay ajuste" />
-                          <p className="text-xs text-muted-foreground mt-0.5 italic">Completar solo al aplicar un ajuste</p>
                         </div>
                         <div>
                           <label className="block text-xs text-muted-foreground mb-1">Ajuste cada (meses)</label>
@@ -550,42 +628,79 @@ export default function Locatarios() {
                           <input value={pf.notas} onChange={(e) => updatePropForm(idx, "notas", e.target.value)} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="Cláusulas especiales, etc." />
                         </div>
                       </div>
+
+                      {/* Grilla de períodos de ajuste */}
+                      {(() => {
+                        const periodos = getPeriodos(pf.fecha_inicio, pf.fecha_fin || null, pf.intervalo_ajuste_meses);
+                        if (periodos.length === 0) {
+                          return <p className="text-xs text-muted-foreground italic">Completá fecha de inicio, fin e intervalo para ver los períodos de ajuste.</p>;
+                        }
+                        const existingLp = editing?.locatario_propiedades.find((lp) => lp.propiedad_id === pf.propiedad_id);
+                        const historialProp = (historial || [])
+                          .filter((h: any) => h.propiedad_id === pf.propiedad_id)
+                          .sort((a: any, b: any) => (a.fecha_desde || "").localeCompare(b.fecha_desde || ""));
+                        // current period index = cuántos ajustes ya se hicieron (cada uno crea 1 historial)
+                        const currentIdx = existingLp ? historialProp.length : 0;
+                        return (
+                          <div className="mt-2">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Plan de ajustes ({periodos.length} períodos)</p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                              {periodos.map((fecha, pIdx) => {
+                                const isPast = pIdx < currentIdx;
+                                const isCurrent = pIdx === currentIdx;
+                                const isFuture = pIdx > currentIdx;
+                                const isNextEditable = pIdx === currentIdx + 1;
+                                let valor: number | "" = "";
+                                let label = "";
+                                let bg = "bg-card";
+                                if (isPast) {
+                                  valor = Number(historialProp[pIdx]?.monto ?? 0);
+                                  label = "Aplicado";
+                                  bg = "bg-secondary/60";
+                                } else if (isCurrent) {
+                                  valor = pf.monto_base;
+                                  label = pIdx === 0 ? "Inicial / Actual" : "Actual";
+                                  bg = "bg-primary/10 border-primary/40";
+                                } else if (isFuture) {
+                                  valor = pf.pending_ajustes[pIdx] || "";
+                                  label = isNextEditable ? "Próximo ajuste" : "Futuro";
+                                }
+                                return (
+                                  <div key={pIdx} className={`border border-border rounded-lg p-2 ${bg}`}>
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-[10px] font-semibold text-muted-foreground uppercase">Período {pIdx + 1}</span>
+                                      <span className="text-[10px] text-muted-foreground">{label}</span>
+                                    </div>
+                                    <p className="text-[11px] text-foreground mb-1">{fmtDDMMYYYY(fecha)}</p>
+                                    <input
+                                      type="number"
+                                      value={valor === "" ? "" : valor}
+                                      onWheel={(e) => e.currentTarget.blur()}
+                                      readOnly={isPast || isCurrent || (isFuture && !isNextEditable)}
+                                      disabled={isFuture && !isNextEditable}
+                                      onChange={(e) => {
+                                        const v = e.target.value === "" ? 0 : Number(e.target.value);
+                                        setPropForms((prev) => prev.map((p, i) => i === idx ? { ...p, pending_ajustes: { ...p.pending_ajustes, [pIdx]: v } } : p));
+                                      }}
+                                      placeholder={isNextEditable ? "Nuevo monto" : "—"}
+                                      className="w-full px-2 py-1 text-xs bg-card border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            {!existingLp && (
+                              <p className="text-[11px] text-muted-foreground italic mt-2">Los ajustes futuros podrán cargarse luego de guardar el contrato.</p>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>
               </div>
               </div>
 
-              {/* Price History */}
-              {!isNew && historial.length > 0 && (
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => setShowHistory(showHistory ? null : editing.id)}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors"
-                  >
-                    <History className="w-3.5 h-3.5" />
-                    Historial de precios ({historial.length})
-                  </button>
-                  {showHistory === editing.id && (
-                    <div className="mt-2 space-y-1.5">
-                      {historial.map((h) => {
-                        const prop = propiedades.find((p) => p.id === h.propiedad_id);
-                        return (
-                          <div key={h.id} className="flex items-center justify-between bg-secondary/50 rounded-lg px-3 py-2 text-xs">
-                            <span className="text-muted-foreground">
-                              {prop?.direccion ?? "Propiedad eliminada"} — <strong className="text-foreground">${Number(h.monto).toLocaleString("es-AR")}</strong>
-                            </span>
-                            <span className="text-muted-foreground">
-                              {h.fecha_desde} → {h.fecha_hasta}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
             <div className="px-6 py-4 border-t border-border flex items-center justify-between">
               {!isNew && (
                 <button
