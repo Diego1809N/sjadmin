@@ -270,11 +270,13 @@ export default function RecibosGenerados() {
 
   return (
     <>
-      {printRecibo && (
+      {printRecibo && createPortal(
         <div className="print-only">
           <ReciboImprimible recibo={printRecibo} />
-        </div>
+        </div>,
+        document.body
       )}
+
 
       <div className="p-6 space-y-4 no-print">
         <div>
