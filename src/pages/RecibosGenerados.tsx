@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Trash2, Download, Check, X, Search, Loader2 } from "lucide-react";
@@ -269,11 +270,13 @@ export default function RecibosGenerados() {
 
   return (
     <>
-      {printRecibo && (
+      {printRecibo && createPortal(
         <div className="print-only">
           <ReciboImprimible recibo={printRecibo} />
-        </div>
+        </div>,
+        document.body
       )}
+
 
       <div className="p-6 space-y-4 no-print">
         <div>
