@@ -348,18 +348,22 @@ export default function GenerarCobro() {
   if (generado) {
     return (
       <>
-        {/* Print-only area */}
-        <div className="print-only">
-          <div style={{ width: "210mm", height: "296mm", background: "white", display: "flex", flexDirection: "column", overflow: "hidden", pageBreakAfter: "avoid", pageBreakInside: "avoid" }}>
-            {halfContent("ORIGINAL")}
-            <div style={{ borderTop: "1.5px dashed #aaa", position: "relative", margin: "0", flexShrink: 0 }}>
-              <span style={{ position: "absolute", left: "50%", top: "-9px", transform: "translateX(-50%)", fontSize: "9px", color: "#aaa", background: "white", padding: "0 6px", letterSpacing: "2px" }}>
-                ✂ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ✂
-              </span>
+        {/* Print-only area — portaled into <body> so print CSS can isolate it cleanly */}
+        {createPortal(
+          <div className="print-only">
+            <div style={{ width: "210mm", height: "296mm", background: "white", display: "flex", flexDirection: "column", overflow: "hidden", pageBreakAfter: "avoid", pageBreakInside: "avoid" }}>
+              {halfContent("ORIGINAL")}
+              <div style={{ borderTop: "1.5px dashed #aaa", position: "relative", margin: "0", flexShrink: 0 }}>
+                <span style={{ position: "absolute", left: "50%", top: "-9px", transform: "translateX(-50%)", fontSize: "9px", color: "#aaa", background: "white", padding: "0 6px", letterSpacing: "2px" }}>
+                  ✂ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ✂
+                </span>
+              </div>
+              {halfContent("COPIA")}
             </div>
-            {halfContent("COPIA")}
-          </div>
-        </div>
+          </div>,
+          document.body
+        )}
+
 
         {/* Screen preview */}
         <div className="no-print p-6 max-w-2xl mx-auto">
