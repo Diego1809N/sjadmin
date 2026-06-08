@@ -82,29 +82,30 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
       padding: "8mm 12mm",
       boxSizing: "border-box",
       fontFamily: "Arial, sans-serif",
-      fontSize: "13px",
+      fontSize: "11px",
       background: "white",
       display: "flex",
       flexDirection: "column",
       justifyContent: "space-between",
       overflow: "hidden",
+      border: "1px solid #333",
     }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1.5px solid #333", paddingBottom: "6px" }}>
         <div>
-          <div style={{ fontWeight: "bold", fontSize: "19px" }}>Recibo de Alquiler</div>
-          <div style={{ color: "#666", fontSize: "11px", marginTop: "2px" }}>Nº {recibo.nro_serie}</div>
+          <div style={{ fontWeight: "bold", fontSize: "17px" }}>Recibo de Alquiler</div>
+          <div style={{ color: "#666", fontSize: "10px", marginTop: "2px" }}>Nº {recibo.nro_serie}</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div style={{ fontSize: "11px", color: "#666", textAlign: "right" }}>
+          <div style={{ fontSize: "10px", color: "#666", textAlign: "right" }}>
             <span style={{ textTransform: "uppercase", letterSpacing: "0.5px" }}>Fecha de pago</span><br />
-            <strong style={{ fontSize: "15px", color: "#222" }}>{fechaConDiaBlanco}</strong>
+            <strong style={{ fontSize: "13px", color: "#222" }}>{fechaConDiaBlanco}</strong>
             
           </div>
           <div style={{
             background: tipo === "ORIGINAL" ? "#1a1a2e" : "#e2e8f0",
             color: tipo === "ORIGINAL" ? "white" : "#333",
-            padding: "5px 16px", borderRadius: "4px", fontWeight: "bold", fontSize: "13px",
+            padding: "5px 16px", borderRadius: "4px", fontWeight: "bold", fontSize: "12px",
           }}>
             {tipo}
           </div>
@@ -112,47 +113,46 @@ function ReciboImprimible({ recibo }: { recibo: Recibo }) {
       </div>
 
       {/* Info fields */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 3fr", gap: "6px 14px", paddingTop: "8px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 3fr", gap: "5px 14px", paddingTop: "6px" }}>
         <div>
-          <span style={{ color: "#666", fontSize: "10px", textTransform: "uppercase" }}>Locatario</span><br />
-          <strong style={{ fontSize: "14px" }}>{recibo.locatario_nombre}</strong>
+          <span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Locatario</span><br />
+          <strong style={{ fontSize: "12px" }}>{recibo.locatario_nombre}</strong>
         </div>
         <div>
-          <span style={{ color: "#666", fontSize: "10px", textTransform: "uppercase" }}>Propiedad</span><br />
-          <strong style={{ fontSize: "14px" }}>{recibo.propiedad}</strong>
+          <span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Propiedad</span><br />
+          <strong style={{ fontSize: "12px" }}>{recibo.propiedad}</strong>
         </div>
         <div style={{ gridColumn: "span 2" }}>
-          <span style={{ color: "#666", fontSize: "10px", textTransform: "uppercase" }}>Período</span><br />
-          <strong style={{ fontSize: "14px" }}>{fmtDate(recibo.periodo_desde)} al {fmtDate(recibo.periodo_hasta)}</strong>
+          <span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Período</span><br />
+          <strong style={{ fontSize: "12px" }}>{fmtDate(recibo.periodo_desde)} al {fmtDate(recibo.periodo_hasta)}</strong>
         </div>
       </div>
 
       {/* Concepts table — centered vertically in the remaining space */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "8px 0" }}>
-        <div style={{ background: "#f4f4f4", borderRadius: "6px", padding: "12px 24px", maxWidth: "480px", margin: "0 auto", width: "100%" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "6px 0" }}>
+        <div style={{ background: "#f4f4f4", borderRadius: "6px", padding: "10px 22px", maxWidth: "460px", margin: "0 auto", width: "100%" }}>
           {conceptosConMonto.map((c) => (
-            <div key={c.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "0.5px solid #e0e0e0" }}>
-              <span style={{ fontSize: "17px", fontWeight: 500 }}>{c.label}</span>
-              <strong style={{ fontSize: "17px" }}>${c.monto.toLocaleString("es-AR")}</strong>
+            <div key={c.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "0.5px solid #e0e0e0" }}>
+              <span style={{ fontSize: "15px", fontWeight: 500 }}>{c.label}</span>
+              <strong style={{ fontSize: "15px" }}>${c.monto.toLocaleString("es-AR")}</strong>
             </div>
           ))}
         </div>
         {/* TOTAL debajo de los conceptos, alineado a la derecha */}
-        <div style={{ maxWidth: "480px", margin: "8px auto 0", width: "100%", textAlign: "right" }}>
-          <strong style={{ fontSize: "18px" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
+        <div style={{ maxWidth: "460px", margin: "6px auto 0", width: "100%", textAlign: "right" }}>
+          <strong style={{ fontSize: "16px" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
         </div>
       </div>
 
       {/* Footer: total en letras + firma */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", paddingTop: "6px", gap: "20px" }}>
-        <div style={{ fontSize: "11px", color: "#333", maxWidth: "60%", lineHeight: 1.3 }}>
-          <span style={{ color: "#666", fontSize: "9px", textTransform: "uppercase" }}>Son</span><br />
+      <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "flex-start", paddingTop: "2px", gap: "20px" }}>
+        <div style={{ fontSize: "10px", color: "#333", maxWidth: "55%", lineHeight: 1.3 }}>
+          <span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Son</span><br />
           <em style={{ fontStyle: "italic", textTransform: "capitalize" }}>{numeroALetras(total)}</em>
         </div>
-        <div style={{ textAlign: "right", fontSize: "10px", color: "#666", marginRight: "40px", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-          <div style={{ height: "22px" }}></div>
-          <div style={{ borderBottom: "1px solid #333", width: "160px" }}></div>
-          <div style={{ marginTop: "2px" }}>Firma</div>
+        <div style={{ marginLeft: "auto", fontSize: "9px", color: "#666", display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <div style={{ borderBottom: "1px solid #333", width: "240px" }}></div>
+          <div style={{ marginTop: "2px", textAlign: "center" }}>Firma</div>
         </div>
       </div>
     </div>

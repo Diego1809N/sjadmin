@@ -268,29 +268,30 @@ export default function GenerarCobro() {
       padding: "6mm 10mm",
       boxSizing: "border-box",
       fontFamily: "Arial, sans-serif",
-      fontSize: "11px",
+      fontSize: "10px",
       background: "white",
       display: "flex",
       flexDirection: "column",
       justifyContent: "space-between",
       overflow: "hidden",
+      border: "1px solid #333",
     }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1.5px solid #333", paddingBottom: "5px" }}>
         <div>
-          <div style={{ fontWeight: "bold", fontSize: "16px" }}>Recibo de Alquiler</div>
-          <div style={{ color: "#666", fontSize: "9px", marginTop: "2px" }}>Nº {nroSerie}</div>
+          <div style={{ fontWeight: "bold", fontSize: "14px" }}>Recibo de Alquiler</div>
+          <div style={{ color: "#666", fontSize: "8px", marginTop: "2px" }}>Nº {nroSerie}</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div style={{ fontSize: "9px", color: "#666", textAlign: "right" }}>
+          <div style={{ fontSize: "8px", color: "#666", textAlign: "right" }}>
             <span style={{ textTransform: "uppercase", letterSpacing: "0.5px" }}>Fecha de pago</span><br />
-            <strong style={{ fontSize: "13px", color: "#222" }}>{fechaConDiaBlanco}</strong>
+            <strong style={{ fontSize: "12px", color: "#222" }}>{fechaConDiaBlanco}</strong>
             
           </div>
           <div style={{
             background: tipo === "ORIGINAL" ? "#1a1a2e" : "#e2e8f0",
             color: tipo === "ORIGINAL" ? "white" : "#333",
-            padding: "5px 16px", borderRadius: "4px", fontWeight: "bold", fontSize: "12px",
+            padding: "4px 14px", borderRadius: "4px", fontWeight: "bold", fontSize: "11px",
           }}>
             {tipo}
           </div>
@@ -298,47 +299,46 @@ export default function GenerarCobro() {
       </div>
 
       {/* Info fields */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 3fr", gap: "6px 14px", paddingTop: "6px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 3fr", gap: "5px 14px", paddingTop: "5px" }}>
         <div>
-          <span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Locatario</span><br />
-          <strong style={{ fontSize: "12px" }}>{form.locatario}</strong>
+          <span style={{ color: "#666", fontSize: "7px", textTransform: "uppercase" }}>Locatario</span><br />
+          <strong style={{ fontSize: "11px" }}>{form.locatario}</strong>
         </div>
         <div>
-          <span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Propiedad</span><br />
-          <strong style={{ fontSize: "12px" }}>{form.propiedad}</strong>
+          <span style={{ color: "#666", fontSize: "7px", textTransform: "uppercase" }}>Propiedad</span><br />
+          <strong style={{ fontSize: "11px" }}>{form.propiedad}</strong>
         </div>
         <div style={{ gridColumn: "span 2" }}>
-          <span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Período</span><br />
-          <strong style={{ fontSize: "12px" }}>{fmtDate(form.periodoDesde)} al {fmtDate(form.periodoHasta)}</strong>
+          <span style={{ color: "#666", fontSize: "7px", textTransform: "uppercase" }}>Período</span><br />
+          <strong style={{ fontSize: "11px" }}>{fmtDate(form.periodoDesde)} al {fmtDate(form.periodoHasta)}</strong>
         </div>
       </div>
 
       {/* Concepts table — centered vertically */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "6px 0" }}>
-        <div style={{ background: "#f4f4f4", borderRadius: "4px", padding: "8px 14px", maxWidth: "380px", margin: "0 auto", width: "100%" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "4px 0" }}>
+        <div style={{ background: "#f4f4f4", borderRadius: "4px", padding: "6px 14px", maxWidth: "380px", margin: "0 auto", width: "100%" }}>
           {conceptosConMonto.map((c) => (
-            <div key={c.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "3px 0", borderBottom: "0.5px solid #e0e0e0" }}>
-              <span style={{ fontSize: "12px", fontWeight: 500 }}>{c.label}</span>
-              <strong style={{ fontSize: "12px" }}>${c.monto.toLocaleString("es-AR")}</strong>
+            <div key={c.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "2px 0", borderBottom: "0.5px solid #e0e0e0" }}>
+              <span style={{ fontSize: "11px", fontWeight: 500 }}>{c.label}</span>
+              <strong style={{ fontSize: "11px" }}>${c.monto.toLocaleString("es-AR")}</strong>
             </div>
           ))}
         </div>
         {/* TOTAL debajo, alineado a la derecha */}
-        <div style={{ maxWidth: "380px", margin: "6px auto 0", width: "100%", textAlign: "right" }}>
-          <strong style={{ fontSize: "14px" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
+        <div style={{ maxWidth: "380px", margin: "5px auto 0", width: "100%", textAlign: "right" }}>
+          <strong style={{ fontSize: "13px" }}>TOTAL: ${total.toLocaleString("es-AR")}</strong>
         </div>
       </div>
 
       {/* Footer: total en letras + firma */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", paddingTop: "6px", gap: "16px" }}>
-        <div style={{ fontSize: "10px", color: "#333", maxWidth: "60%", lineHeight: 1.3 }}>
-          <span style={{ color: "#666", fontSize: "8px", textTransform: "uppercase" }}>Son</span><br />
+      <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "flex-start", paddingTop: "2px", gap: "16px" }}>
+        <div style={{ fontSize: "9px", color: "#333", maxWidth: "55%", lineHeight: 1.3 }}>
+          <span style={{ color: "#666", fontSize: "7px", textTransform: "uppercase" }}>Son</span><br />
           <em style={{ fontStyle: "italic", textTransform: "capitalize" }}>{numeroALetras(total)}</em>
         </div>
-        <div style={{ textAlign: "right", fontSize: "8px", color: "#666", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-          <div style={{ height: "18px" }}></div>
-          <div style={{ borderBottom: "1px solid #333", width: "120px" }}></div>
-          <div style={{ marginTop: "2px" }}>Firma</div>
+        <div style={{ marginLeft: "auto", fontSize: "8px", color: "#666", display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <div style={{ borderBottom: "1px solid #333", width: "220px" }}></div>
+          <div style={{ marginTop: "2px", textAlign: "center" }}>Firma</div>
         </div>
       </div>
     </div>
