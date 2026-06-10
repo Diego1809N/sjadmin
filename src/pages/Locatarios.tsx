@@ -86,12 +86,28 @@ function fmtDDMMYYYY(d: Date) {
   return `${dd}/${mm}/${d.getFullYear()}`;
 }
 
+// Parsea "YYYY-MM-DD" como fecha LOCAL (evita el desfase de zona horaria que hace `new Date("2024-08-08")` retroceder un día).
+function parseLocalDate(s: string | null | undefined): Date | null {
+  if (!s) return null;
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return new Date(s);
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+
+function toLocalISO(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
 function getPeriodos(fechaInicio: string, fechaFin: string | null, intervalo: number): Date[] {
   if (!fechaInicio || !intervalo) return [];
-  const start = new Date(fechaInicio);
+  const start = parseLocalDate(fechaInicio);
+  if (!start) return [];
   let totalMonths = 12;
-  if (fechaFin) {
-    const end = new Date(fechaFin);
+  const end = parseLocalDate(fechaFin);
+  if (end) {
     totalMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
   }
   const n = Math.max(1, Math.ceil(totalMonths / intervalo));
@@ -100,6 +116,19 @@ function getPeriodos(fechaInicio: string, fechaFin: string | null, intervalo: nu
     d.setMonth(d.getMonth() + i * intervalo);
     return d;
   });
+}
+
+// Índice del período "actual" según la fecha de hoy (el último período cuya fecha ≤ hoy).
+function getCurrentPeriodoIdx(periodos: Date[]): number {
+  if (periodos.length === 0) return 0;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  let idx = 0;
+  for (let i = 0; i < periodos.length; i++) {
+    const p = new Date(periodos[i]); p.setHours(0, 0, 0, 0);
+    if (p.getTime() <= today.getTime()) idx = i;
+    else break;
+  }
+  return idx;
 }
 
 function getRowStatus(l: LocatarioConProps): "sin-fechas" | "vence" | "actualiza" | "ok" {
@@ -260,41 +289,42 @@ export default function Locatarios() {
         if (!pf.propiedad_id) continue;
         const existingLp = editing?.locatario_propiedades.find((lp) => lp.propiedad_id === pf.propiedad_id);
 
-        // Aplicar ajustes pendientes ordenados por período (asc)
-        const pendings = Object.entries(pf.pending_ajustes || {})
-          .map(([k, v]) => ({ idx: Number(k), monto: Number(v) }))
-          .filter((p) => p.monto > 0)
-          .sort((a, b) => a.idx - b.idx);
-
-        let currentMonto = pf.monto_base;
-        let currentFechaUltimoAjuste: string | null = existingLp?.fecha_ultimo_ajuste ?? null;
         const periodos = getPeriodos(pf.fecha_inicio, pf.fecha_fin || null, pf.intervalo_ajuste_meses);
+        const currentIdx = getCurrentPeriodoIdx(periodos);
+        // El monto actual = el del período actual (editable). Fallback a monto_base.
+        const montoActual = Number(pf.pending_ajustes?.[currentIdx] ?? pf.monto_base) || 0;
+        const fechaUltimoAjuste = periodos[currentIdx] ? toLocalISO(periodos[currentIdx]) : null;
 
         if (existingLp && !isNew) {
-          // Procesar cada ajuste pendiente: guardar histórico y actualizar monto
-          for (const p of pendings) {
-            const periodoFecha = periodos[p.idx];
-            if (!periodoFecha) continue;
-            const periodoFechaISO = periodoFecha.toISOString().split("T")[0];
+          // Reescribir historial para esta propiedad+locatario: borrar y reinsertar los pasados.
+          await supabase
+            .from("historial_precios")
+            .delete()
+            .eq("locatario_id", locId!)
+            .eq("propiedad_id", pf.propiedad_id);
+
+          for (let i = 0; i < currentIdx; i++) {
+            const monto = Number(pf.pending_ajustes?.[i] ?? 0);
+            if (!monto) continue;
+            const fechaDesde = periodos[i] ? toLocalISO(periodos[i]) : null;
+            const fechaHasta = periodos[i + 1] ? toLocalISO(periodos[i + 1]) : null;
             await supabase.from("historial_precios").insert({
               locatario_id: locId!,
               propiedad_id: pf.propiedad_id,
-              monto: Number(currentMonto),
-              fecha_desde: currentFechaUltimoAjuste || existingLp.fecha_inicio || new Date().toISOString().split("T")[0],
-              fecha_hasta: periodoFechaISO,
+              monto,
+              fecha_desde: fechaDesde,
+              fecha_hasta: fechaHasta,
             });
-            currentMonto = p.monto;
-            currentFechaUltimoAjuste = periodoFechaISO;
           }
 
           const { error } = await supabase.from("locatario_propiedades").update({
             fecha_inicio: pf.fecha_inicio || null,
             fecha_fin: pf.fecha_fin || null,
-            monto_base: currentMonto,
+            monto_base: montoActual,
             intervalo_ajuste_meses: pf.intervalo_ajuste_meses,
             indice_actualizacion: pf.indice_actualizacion,
             notas: pf.notas || null,
-            ...(pendings.length > 0 ? { fecha_ultimo_ajuste: currentFechaUltimoAjuste } : {}),
+            fecha_ultimo_ajuste: fechaUltimoAjuste,
           }).eq("id", existingLp.id);
           if (error) throw error;
         } else {
@@ -303,10 +333,11 @@ export default function Locatarios() {
             propiedad_id: pf.propiedad_id,
             fecha_inicio: pf.fecha_inicio || null,
             fecha_fin: pf.fecha_fin || null,
-            monto_base: pf.monto_base,
+            monto_base: montoActual || pf.monto_base,
             intervalo_ajuste_meses: pf.intervalo_ajuste_meses,
             indice_actualizacion: pf.indice_actualizacion,
             notas: pf.notas || null,
+            fecha_ultimo_ajuste: fechaUltimoAjuste,
           });
           if (error) throw error;
         }
@@ -347,20 +378,41 @@ export default function Locatarios() {
     );
   }, [locatarios, search]);
 
-  const openEdit = (l: LocatarioConProps) => {
+  const openEdit = async (l: LocatarioConProps) => {
     setEditing(l);
     setIsNew(false);
     setForm({ nombre: l.nombre, dni: l.dni ?? "", telefono: l.telefono ?? "", email: l.email ?? "", notas: l.notas ?? "" });
-    setPropForms(l.locatario_propiedades.map((lp) => ({
-      propiedad_id: lp.propiedad_id,
-      fecha_inicio: lp.fecha_inicio ?? "",
-      fecha_fin: lp.fecha_fin ?? "",
-      monto_base: Number(lp.monto_base),
-      intervalo_ajuste_meses: lp.intervalo_ajuste_meses ?? 3,
-      indice_actualizacion: lp.indice_actualizacion ?? "ICL",
-      notas: lp.notas ?? "",
-      pending_ajustes: {},
-    })));
+
+    // Precargar pending_ajustes desde historial (períodos pasados) + monto actual.
+    const { data: hist } = await supabase
+      .from("historial_precios")
+      .select("propiedad_id, monto, fecha_desde, created_at")
+      .eq("locatario_id", l.id)
+      .order("created_at", { ascending: true });
+
+    setPropForms(l.locatario_propiedades.map((lp) => {
+      const periodos = getPeriodos(lp.fecha_inicio ?? "", lp.fecha_fin ?? null, lp.intervalo_ajuste_meses ?? 3);
+      const currentIdx = getCurrentPeriodoIdx(periodos);
+      const histProp = (hist ?? []).filter((h: any) => h.propiedad_id === lp.propiedad_id);
+      const pending: Record<number, number> = {};
+      // Los pasados: 0..currentIdx-1 desde historial (en orden).
+      for (let i = 0; i < currentIdx; i++) {
+        const h = histProp[i];
+        if (h) pending[i] = Number(h.monto);
+      }
+      // El actual = monto_base.
+      pending[currentIdx] = Number(lp.monto_base);
+      return {
+        propiedad_id: lp.propiedad_id,
+        fecha_inicio: lp.fecha_inicio ?? "",
+        fecha_fin: lp.fecha_fin ?? "",
+        monto_base: Number(lp.monto_base),
+        intervalo_ajuste_meses: lp.intervalo_ajuste_meses ?? 3,
+        indice_actualizacion: lp.indice_actualizacion ?? "ICL",
+        notas: lp.notas ?? "",
+        pending_ajustes: pending,
+      };
+    }));
     setRemovedLpIds([]);
   };
 
@@ -629,42 +681,28 @@ export default function Locatarios() {
                         </div>
                       </div>
 
-                      {/* Grilla de períodos de ajuste */}
+                      {/* Grilla de períodos de ajuste — todos editables */}
                       {(() => {
                         const periodos = getPeriodos(pf.fecha_inicio, pf.fecha_fin || null, pf.intervalo_ajuste_meses);
                         if (periodos.length === 0) {
                           return <p className="text-xs text-muted-foreground italic">Completá fecha de inicio, fin e intervalo para ver los períodos de ajuste.</p>;
                         }
-                        const existingLp = editing?.locatario_propiedades.find((lp) => lp.propiedad_id === pf.propiedad_id);
-                        const historialProp = (historial || [])
-                          .filter((h: any) => h.propiedad_id === pf.propiedad_id)
-                          .sort((a: any, b: any) => (a.fecha_desde || "").localeCompare(b.fecha_desde || ""));
-                        // current period index = cuántos ajustes ya se hicieron (cada uno crea 1 historial)
-                        const currentIdx = existingLp ? historialProp.length : 0;
+                        const currentIdx = getCurrentPeriodoIdx(periodos);
                         return (
                           <div className="mt-2">
                             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Plan de ajustes ({periodos.length} períodos)</p>
+                            <p className="text-[11px] text-muted-foreground mb-2">El monto del período actual será el utilizado para generar los recibos.</p>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                               {periodos.map((fecha, pIdx) => {
                                 const isPast = pIdx < currentIdx;
                                 const isCurrent = pIdx === currentIdx;
                                 const isFuture = pIdx > currentIdx;
-                                const isNextEditable = pIdx === currentIdx + 1;
-                                let valor: number | "" = "";
                                 let label = "";
                                 let bg = "bg-card";
-                                if (isPast) {
-                                  valor = Number(historialProp[pIdx]?.monto ?? 0);
-                                  label = "Aplicado";
-                                  bg = "bg-secondary/60";
-                                } else if (isCurrent) {
-                                  valor = pf.monto_base;
-                                  label = pIdx === 0 ? "Inicial / Actual" : "Actual";
-                                  bg = "bg-primary/10 border-primary/40";
-                                } else if (isFuture) {
-                                  valor = pf.pending_ajustes[pIdx] || "";
-                                  label = isNextEditable ? "Próximo ajuste" : "Futuro";
-                                }
+                                if (isPast) { label = "Anterior"; bg = "bg-secondary/60"; }
+                                else if (isCurrent) { label = pIdx === 0 ? "Inicial / Actual" : "Actual"; bg = "bg-primary/10 border-primary/40"; }
+                                else if (isFuture) { label = pIdx === currentIdx + 1 ? "Próximo ajuste" : "Futuro"; }
+                                const valor = pf.pending_ajustes?.[pIdx];
                                 return (
                                   <div key={pIdx} className={`border border-border rounded-lg p-2 ${bg}`}>
                                     <div className="flex items-center justify-between mb-1">
@@ -674,24 +712,24 @@ export default function Locatarios() {
                                     <p className="text-[11px] text-foreground mb-1">{fmtDDMMYYYY(fecha)}</p>
                                     <input
                                       type="number"
-                                      value={valor === "" ? "" : valor}
+                                      value={valor === undefined || valor === 0 ? "" : valor}
                                       onWheel={(e) => e.currentTarget.blur()}
-                                      readOnly={isPast || isCurrent || (isFuture && !isNextEditable)}
-                                      disabled={isFuture && !isNextEditable}
                                       onChange={(e) => {
                                         const v = e.target.value === "" ? 0 : Number(e.target.value);
-                                        setPropForms((prev) => prev.map((p, i) => i === idx ? { ...p, pending_ajustes: { ...p.pending_ajustes, [pIdx]: v } } : p));
+                                        setPropForms((prev) => prev.map((p, i) => {
+                                          if (i !== idx) return p;
+                                          const next = { ...p, pending_ajustes: { ...p.pending_ajustes, [pIdx]: v } };
+                                          if (pIdx === currentIdx) next.monto_base = v;
+                                          return next;
+                                        }));
                                       }}
-                                      placeholder={isNextEditable ? "Nuevo monto" : "—"}
-                                      className="w-full px-2 py-1 text-xs bg-card border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
+                                      placeholder="Monto"
+                                      className="w-full px-2 py-1 text-xs bg-card border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     />
                                   </div>
                                 );
                               })}
                             </div>
-                            {!existingLp && (
-                              <p className="text-[11px] text-muted-foreground italic mt-2">Los ajustes futuros podrán cargarse luego de guardar el contrato.</p>
-                            )}
                           </div>
                         );
                       })()}
