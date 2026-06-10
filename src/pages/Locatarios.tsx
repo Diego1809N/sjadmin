@@ -376,20 +376,41 @@ export default function Locatarios() {
     );
   }, [locatarios, search]);
 
-  const openEdit = (l: LocatarioConProps) => {
+  const openEdit = async (l: LocatarioConProps) => {
     setEditing(l);
     setIsNew(false);
     setForm({ nombre: l.nombre, dni: l.dni ?? "", telefono: l.telefono ?? "", email: l.email ?? "", notas: l.notas ?? "" });
-    setPropForms(l.locatario_propiedades.map((lp) => ({
-      propiedad_id: lp.propiedad_id,
-      fecha_inicio: lp.fecha_inicio ?? "",
-      fecha_fin: lp.fecha_fin ?? "",
-      monto_base: Number(lp.monto_base),
-      intervalo_ajuste_meses: lp.intervalo_ajuste_meses ?? 3,
-      indice_actualizacion: lp.indice_actualizacion ?? "ICL",
-      notas: lp.notas ?? "",
-      pending_ajustes: {},
-    })));
+
+    // Precargar pending_ajustes desde historial (períodos pasados) + monto actual.
+    const { data: hist } = await supabase
+      .from("historial_precios")
+      .select("propiedad_id, monto, fecha_desde, created_at")
+      .eq("locatario_id", l.id)
+      .order("created_at", { ascending: true });
+
+    setPropForms(l.locatario_propiedades.map((lp) => {
+      const periodos = getPeriodos(lp.fecha_inicio ?? "", lp.fecha_fin ?? null, lp.intervalo_ajuste_meses ?? 3);
+      const currentIdx = getCurrentPeriodoIdx(periodos);
+      const histProp = (hist ?? []).filter((h: any) => h.propiedad_id === lp.propiedad_id);
+      const pending: Record<number, number> = {};
+      // Los pasados: 0..currentIdx-1 desde historial (en orden).
+      for (let i = 0; i < currentIdx; i++) {
+        const h = histProp[i];
+        if (h) pending[i] = Number(h.monto);
+      }
+      // El actual = monto_base.
+      pending[currentIdx] = Number(lp.monto_base);
+      return {
+        propiedad_id: lp.propiedad_id,
+        fecha_inicio: lp.fecha_inicio ?? "",
+        fecha_fin: lp.fecha_fin ?? "",
+        monto_base: Number(lp.monto_base),
+        intervalo_ajuste_meses: lp.intervalo_ajuste_meses ?? 3,
+        indice_actualizacion: lp.indice_actualizacion ?? "ICL",
+        notas: lp.notas ?? "",
+        pending_ajustes: pending,
+      };
+    }));
     setRemovedLpIds([]);
   };
 
