@@ -86,12 +86,28 @@ function fmtDDMMYYYY(d: Date) {
   return `${dd}/${mm}/${d.getFullYear()}`;
 }
 
+// Parsea "YYYY-MM-DD" como fecha LOCAL (evita el desfase de zona horaria que hace `new Date("2024-08-08")` retroceder un día).
+function parseLocalDate(s: string | null | undefined): Date | null {
+  if (!s) return null;
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return new Date(s);
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+
+function toLocalISO(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
 function getPeriodos(fechaInicio: string, fechaFin: string | null, intervalo: number): Date[] {
   if (!fechaInicio || !intervalo) return [];
-  const start = new Date(fechaInicio);
+  const start = parseLocalDate(fechaInicio);
+  if (!start) return [];
   let totalMonths = 12;
-  if (fechaFin) {
-    const end = new Date(fechaFin);
+  const end = parseLocalDate(fechaFin);
+  if (end) {
     totalMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
   }
   const n = Math.max(1, Math.ceil(totalMonths / intervalo));
@@ -100,6 +116,19 @@ function getPeriodos(fechaInicio: string, fechaFin: string | null, intervalo: nu
     d.setMonth(d.getMonth() + i * intervalo);
     return d;
   });
+}
+
+// Índice del período "actual" según la fecha de hoy (el último período cuya fecha ≤ hoy).
+function getCurrentPeriodoIdx(periodos: Date[]): number {
+  if (periodos.length === 0) return 0;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  let idx = 0;
+  for (let i = 0; i < periodos.length; i++) {
+    const p = new Date(periodos[i]); p.setHours(0, 0, 0, 0);
+    if (p.getTime() <= today.getTime()) idx = i;
+    else break;
+  }
+  return idx;
 }
 
 function getRowStatus(l: LocatarioConProps): "sin-fechas" | "vence" | "actualiza" | "ok" {
