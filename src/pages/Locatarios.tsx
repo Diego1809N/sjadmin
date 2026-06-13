@@ -291,8 +291,11 @@ export default function Locatarios() {
 
         const periodos = getPeriodos(pf.fecha_inicio, pf.fecha_fin || null, pf.intervalo_ajuste_meses);
         const currentIdx = getCurrentPeriodoIdx(periodos);
-        // El monto actual = el del período actual (editable). Fallback a monto_base.
-        const montoActual = Number(pf.pending_ajustes?.[currentIdx] ?? pf.monto_base) || 0;
+        // Si no hay períodos calculables (faltan fechas/intervalo), usamos directamente `monto_base`
+        // (el input "Monto inicial"). Si hay grilla, usamos el período actual editable.
+        const montoActual = periodos.length === 0
+          ? Number(pf.monto_base) || 0
+          : Number(pf.pending_ajustes?.[currentIdx] ?? pf.monto_base) || 0;
         const fechaUltimoAjuste = periodos[currentIdx] ? toLocalISO(periodos[currentIdx]) : null;
 
         if (existingLp && !isNew) {
