@@ -666,7 +666,15 @@ export default function Locatarios() {
                         </div>
                         <div>
                           <label className="block text-xs text-muted-foreground mb-1">Monto inicial (ARS)</label>
-                          <input type="number" value={pf.monto_base || ""} onWheel={(e) => e.currentTarget.blur()} onChange={(e) => updatePropForm(idx, "monto_base", e.target.value === "" ? 0 : Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="85000" />
+                          <input type="number" value={pf.monto_base || ""} onWheel={(e) => e.currentTarget.blur()} onChange={(e) => {
+                            const v = e.target.value === "" ? 0 : Number(e.target.value);
+                            setPropForms((prev) => prev.map((p, i) => {
+                              if (i !== idx) return p;
+                              const periodos = getPeriodos(p.fecha_inicio, p.fecha_fin || null, p.intervalo_ajuste_meses);
+                              const cIdx = getCurrentPeriodoIdx(periodos);
+                              return { ...p, monto_base: v, pending_ajustes: { ...p.pending_ajustes, [cIdx]: v } };
+                            }));
+                          }} className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="85000" />
                         </div>
                         <div>
                           <label className="block text-xs text-muted-foreground mb-1">Ajuste cada (meses)</label>
