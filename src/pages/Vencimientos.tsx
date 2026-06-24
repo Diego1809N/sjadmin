@@ -83,7 +83,7 @@ function buildRows(locatarios: Loc[], historial: Hist[]): Row[] {
         fechaStr: "Sin contrato",
         indice: "—",
         intervaloMeses: null,
-        ultimoMonto: lastMonto.get(loc.id) ?? Number(loc.monto_base) || 0,
+        ultimoMonto: lastMonto.get(loc.id) ?? (Number(loc.monto_base) || 0),
         diasRestantes: null,
       });
       return;
@@ -92,7 +92,7 @@ function buildRows(locatarios: Loc[], historial: Hist[]): Row[] {
     lps.forEach((lp) => {
       const locadorNom = lp.propiedades?.locadores?.nombre ?? "—";
       const propNom = lp.propiedades?.direccion ?? "—";
-      const ultimo = lastMonto.get(loc.id) ?? Number(lp.monto_base) || 0;
+      const ultimo = lastMonto.get(loc.id) ?? (Number(lp.monto_base) || 0);
       const indice = lp.indice_actualizacion ?? "—";
       const intervalo = lp.intervalo_ajuste_meses ?? null;
 
