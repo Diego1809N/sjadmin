@@ -208,9 +208,6 @@ export default function Vencimientos() {
   const today = new Date();
   const todayStr = fmtDate(today);
 
-  // Group for PDF: rows with contract grouped by locatario, sin-contrato bucket aparte
-  const conContrato = rows.filter((r) => r.estado !== "sin-contrato");
-  const sinContrato = rows.filter((r) => r.estado === "sin-contrato");
 
   return (
     <>
