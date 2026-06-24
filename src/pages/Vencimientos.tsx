@@ -222,69 +222,39 @@ export default function Vencimientos() {
               <img src="/logo.png" alt="Logo" className="lp-logo" />
               <div className="lp-title">
                 <h1>VENCIMIENTOS Y ACTUALIZACIONES</h1>
-                <p>Generado el {todayStr}</p>
+                <p>Próximos 20 días — Generado el {todayStr}</p>
               </div>
             </div>
 
-            {conContrato.length > 0 && (
-              <>
-                <p className="lp-prop-title" style={{ margin: "0 0 6px 0" }}>Contratos vigentes</p>
-                <table className="lp-table">
-                  <thead>
-                    <tr>
-                      <th>Locatario</th>
-                      <th>Propiedad</th>
-                      <th>Estado</th>
-                      <th>Fecha</th>
-                      <th>Índice</th>
-                      <th>Cada (meses)</th>
-                      <th style={{ textAlign: "right" }}>Último monto</th>
+            {rows.length > 0 && (
+              <table className="lp-table">
+                <thead>
+                  <tr>
+                    <th>Locador</th>
+                    <th>Locatario</th>
+                    <th>Propiedad</th>
+                    <th>Estado</th>
+                    <th>Fecha</th>
+                    <th>Índice</th>
+                    <th>Cada (meses)</th>
+                    <th style={{ textAlign: "right" }}>Último monto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r) => (
+                    <tr key={r.key}>
+                      <td>{r.locador}</td>
+                      <td>{r.locatario}</td>
+                      <td>{r.propiedad}</td>
+                      <td>{r.estado === "vence" ? "Por vencer" : "Actualización"}</td>
+                      <td>{r.fechaStr}</td>
+                      <td>{r.indice}</td>
+                      <td>{r.intervaloMeses ?? "—"}</td>
+                      <td style={{ textAlign: "right" }}>{fmtMoney(r.ultimoMonto)}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {conContrato.map((r) => (
-                      <tr key={r.key}>
-                        <td>{r.locatario}</td>
-                        <td>{r.propiedad}</td>
-                        <td>
-                          {r.estado === "vencido" ? "Vencido" :
-                           r.estado === "vence" ? "Por vencer" : "Actualización"}
-                        </td>
-                        <td>{r.fechaStr}</td>
-                        <td>{r.indice}</td>
-                        <td>{r.intervaloMeses ?? "—"}</td>
-                        <td style={{ textAlign: "right" }}>{fmtMoney(r.ultimoMonto)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </>
-            )}
-
-            {sinContrato.length > 0 && (
-              <>
-                <p className="lp-prop-title" style={{ marginTop: 14 }}>Sin contrato</p>
-                <table className="lp-table">
-                  <thead>
-                    <tr>
-                      <th>Locatario</th>
-                      <th>Locador</th>
-                      <th style={{ textAlign: "right" }}>Monto</th>
-                      <th>Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sinContrato.map((r) => (
-                      <tr key={r.key}>
-                        <td>{r.locatario}</td>
-                        <td>{r.locador}</td>
-                        <td style={{ textAlign: "right" }}>{fmtMoney(r.ultimoMonto)}</td>
-                        <td>Sin contrato</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </>
+                  ))}
+                </tbody>
+              </table>
             )}
 
             <p className="lp-footer">Negocios Inmobiliarios — Portal de Gestión</p>
@@ -299,7 +269,7 @@ export default function Vencimientos() {
             <div>
               <h1 className="text-2xl font-bold text-foreground">Vencimientos / Actualización</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Locatarios con contratos a vencer, ya vencidos, próximas actualizaciones, y sin contrato.
+                Contratos con vencimiento o actualización en los próximos 20 días.
               </p>
             </div>
             <button
@@ -318,14 +288,14 @@ export default function Vencimientos() {
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
               </div>
             ) : rows.length === 0 ? (
-              <div className="py-12 text-center text-sm text-muted-foreground">Sin registros</div>
+              <div className="py-12 text-center text-sm text-muted-foreground">Sin vencimientos ni actualizaciones en los próximos 20 días</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-secondary/50 text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
-                      <th className="text-left px-4 py-3">Locatario</th>
                       <th className="text-left px-4 py-3">Locador</th>
+                      <th className="text-left px-4 py-3">Locatario</th>
                       <th className="text-left px-4 py-3">Propiedad</th>
                       <th className="text-left px-4 py-3">Estado</th>
                       <th className="text-left px-4 py-3">Fecha</th>
@@ -337,17 +307,15 @@ export default function Vencimientos() {
                   <tbody className="divide-y divide-border">
                     {rows.map((r) => (
                       <tr key={r.key} className="hover:bg-secondary/30">
-                        <td className="px-4 py-3 font-medium text-foreground">{r.locatario}</td>
-                        <td className="px-4 py-3 text-muted-foreground">{r.locador}</td>
+                        <td className="px-4 py-3 font-medium text-foreground">{r.locador}</td>
+                        <td className="px-4 py-3 text-foreground">{r.locatario}</td>
                         <td className="px-4 py-3 text-muted-foreground">{r.propiedad}</td>
                         <td className="px-4 py-3">{badge(r.estado)}</td>
                         <td className="px-4 py-3 text-foreground">
                           {r.fechaStr}
-                          {r.diasRestantes !== null && r.estado !== "sin-contrato" && (
+                          {r.diasRestantes !== null && (
                             <span className="block text-xs text-muted-foreground">
-                              {r.diasRestantes < 0
-                                ? `Hace ${Math.abs(r.diasRestantes)} días`
-                                : `En ${r.diasRestantes} días`}
+                              En {r.diasRestantes} días
                             </span>
                           )}
                         </td>
