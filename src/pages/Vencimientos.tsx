@@ -72,22 +72,7 @@ function buildRows(locatarios: Loc[], historial: Hist[]): Row[] {
   locatarios.forEach((loc) => {
     const lps = loc.locatario_propiedades ?? [];
 
-    if (lps.length === 0) {
-      rows.push({
-        key: `nc-${loc.id}`,
-        locatario: loc.nombre,
-        locador: "—",
-        propiedad: "—",
-        estado: "sin-contrato",
-        fecha: null,
-        fechaStr: "Sin contrato",
-        indice: "—",
-        intervaloMeses: null,
-        ultimoMonto: lastMonto.get(loc.id) ?? (Number(loc.monto_base) || 0),
-        diasRestantes: null,
-      });
-      return;
-    }
+    if (lps.length === 0) return;
 
     lps.forEach((lp) => {
       const locadorNom = lp.propiedades?.locadores?.nombre ?? "—";
@@ -96,23 +81,8 @@ function buildRows(locatarios: Loc[], historial: Hist[]): Row[] {
       const indice = lp.indice_actualizacion ?? "—";
       const intervalo = lp.intervalo_ajuste_meses ?? null;
 
-      // Sin contrato: faltan datos base
-      if (!lp.fecha_inicio || !lp.fecha_fin || !intervalo) {
-        rows.push({
-          key: `nc-${lp.id}`,
-          locatario: loc.nombre,
-          locador: locadorNom,
-          propiedad: propNom,
-          estado: "sin-contrato",
-          fecha: null,
-          fechaStr: "Sin contrato",
-          indice,
-          intervaloMeses: intervalo,
-          ultimoMonto: ultimo,
-          diasRestantes: null,
-        });
-        return;
-      }
+      // Sin datos base de contrato → no aplica para los próximos 20 días
+      if (!lp.fecha_inicio || !lp.fecha_fin || !intervalo) return;
 
       // Próximo ajuste contractual
       const inicio = parseLocalDate(lp.fecha_inicio);
@@ -135,24 +105,22 @@ function buildRows(locatarios: Loc[], historial: Hist[]): Row[] {
       const diasFin = Math.ceil((fin.getTime() - today.getTime()) / 86400000);
       const diasAj = Math.ceil((proximo.getTime() - today.getTime()) / 86400000);
 
-      // Decide qué mostrar: si el contrato ya venció o vence pronto, ese es el evento principal.
-      // Si no, mostrar la próxima actualización.
+      // Solo eventos dentro de los próximos 20 días
+      const finProximo = diasFin >= 0 && diasFin <= 20;
+      const ajProximo = diasAj >= 0 && diasAj <= 20;
+      if (!finProximo && !ajProximo) return;
+
       let estado: Row["estado"];
       let fechaEv: Date;
       let dias: number;
-      if (diasFin < 0) {
-        estado = "vencido";
-        fechaEv = fin;
-        dias = diasFin;
-      } else if (diasFin <= 30) {
+      if (finProximo && (!ajProximo || diasFin <= diasAj)) {
         estado = "vence";
         fechaEv = fin;
         dias = diasFin;
       } else {
         estado = "actualiza";
-        fechaEv = proximo > fin ? fin : proximo;
-        dias = Math.ceil((fechaEv.getTime() - today.getTime()) / 86400000);
-        if (fechaEv.getTime() === fin.getTime()) estado = "vence";
+        fechaEv = proximo;
+        dias = diasAj;
       }
 
       rows.push({
@@ -171,10 +139,12 @@ function buildRows(locatarios: Loc[], historial: Hist[]): Row[] {
     });
   });
 
-  // Sort by locatario, then fecha
+  // Orden: locador → locatario → fecha
   rows.sort((a, b) => {
-    const cmp = a.locatario.localeCompare(b.locatario, "es");
-    if (cmp !== 0) return cmp;
+    const c1 = a.locador.localeCompare(b.locador, "es");
+    if (c1 !== 0) return c1;
+    const c2 = a.locatario.localeCompare(b.locatario, "es");
+    if (c2 !== 0) return c2;
     const af = a.fecha ? a.fecha.getTime() : Infinity;
     const bf = b.fecha ? b.fecha.getTime() : Infinity;
     return af - bf;
