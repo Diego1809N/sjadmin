@@ -11,6 +11,7 @@ import RecibosGenerados from "@/pages/RecibosGenerados";
 import ActualizarMontos from "@/pages/ActualizarMontos";
 import Servicios from "@/pages/Servicios";
 import Contratos from "@/pages/Contratos";
+import Vencimientos from "@/pages/Vencimientos";
 import { Loader2 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 
@@ -60,6 +61,7 @@ export default function Index() {
       case "actualizar-montos": return <ActualizarMontos />;
       case "servicios": return <Servicios />;
       case "contratos": return <Contratos />;
+      case "vencimientos": return <Vencimientos />;
       default: return <Dashboard onNavigate={setPage} />;
     }
   };

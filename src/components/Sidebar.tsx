@@ -1,4 +1,4 @@
-import { LayoutDashboard, FileText, Users, UserCheck, Menu, X, LogOut, TrendingUp, Wrench, FileSignature } from "lucide-react";
+import { LayoutDashboard, FileText, Users, UserCheck, Menu, X, LogOut, TrendingUp, Wrench, FileSignature, CalendarClock } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +17,7 @@ const navItems = [
   { id: "actualizar-montos", label: "Actualizar Montos", icon: TrendingUp },
   { id: "servicios", label: "Servicios", icon: Wrench },
   { id: "contratos", label: "Contratos", icon: FileSignature },
+  { id: "vencimientos", label: "Vencimientos/Actualización", icon: CalendarClock },
 ];
 
 export default function Sidebar({ currentPage, onNavigate, onLogout }: SidebarProps) {
