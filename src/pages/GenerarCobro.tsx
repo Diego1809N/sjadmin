@@ -275,7 +275,8 @@ export default function GenerarCobro() {
       flexDirection: "column",
       justifyContent: "space-between",
       overflow: "hidden",
-      border: "1px solid #333",
+      border: "1.5px solid #333",
+      borderRight: "1.5px solid #333",
     }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1.5px solid #333", paddingBottom: "5px" }}>
