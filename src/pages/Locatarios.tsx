@@ -291,22 +291,29 @@ export default function Locatarios() {
 
         const periodos = getPeriodos(pf.fecha_inicio, pf.fecha_fin || null, pf.intervalo_ajuste_meses);
         const currentIdx = getCurrentPeriodoIdx(periodos);
-        // Si no hay períodos calculables (faltan fechas/intervalo), usamos directamente `monto_base`
-        // (el input "Monto inicial"). Si hay grilla, usamos el período actual editable.
+        // El período "activo" es el último casillero completado (aunque sea futuro).
+        // Así, si el usuario carga el monto del próximo período días antes, se guarda igual.
+        let activeIdx = currentIdx;
+        if (periodos.length > 0) {
+          for (let i = periodos.length - 1; i >= 0; i--) {
+            const v = Number(pf.pending_ajustes?.[i] ?? 0);
+            if (v > 0) { activeIdx = Math.max(currentIdx, i); break; }
+          }
+        }
         const montoActual = periodos.length === 0
           ? Number(pf.monto_base) || 0
-          : Number(pf.pending_ajustes?.[currentIdx] ?? pf.monto_base) || 0;
-        const fechaUltimoAjuste = periodos[currentIdx] ? toLocalISO(periodos[currentIdx]) : null;
+          : Number(pf.pending_ajustes?.[activeIdx] ?? pf.monto_base) || 0;
+        const fechaUltimoAjuste = periodos[activeIdx] ? toLocalISO(periodos[activeIdx]) : null;
 
         if (existingLp && !isNew) {
-          // Reescribir historial para esta propiedad+locatario: borrar y reinsertar los pasados.
+          // Reescribir historial para esta propiedad+locatario: borrar y reinsertar los previos al activo.
           await supabase
             .from("historial_precios")
             .delete()
             .eq("locatario_id", locId!)
             .eq("propiedad_id", pf.propiedad_id);
 
-          for (let i = 0; i < currentIdx; i++) {
+          for (let i = 0; i < activeIdx; i++) {
             const monto = Number(pf.pending_ajustes?.[i] ?? 0);
             if (!monto) continue;
             const fechaDesde = periodos[i] ? toLocalISO(periodos[i]) : null;
@@ -319,6 +326,7 @@ export default function Locatarios() {
               fecha_hasta: fechaHasta,
             });
           }
+
 
           const { error } = await supabase.from("locatario_propiedades").update({
             fecha_inicio: pf.fecha_inicio || null,
