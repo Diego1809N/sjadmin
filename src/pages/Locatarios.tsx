@@ -131,6 +131,13 @@ function getCurrentPeriodoIdx(periodos: Date[]): number {
   return idx;
 }
 
+function getPeriodoIdxByDate(periodos: Date[], fecha: string | null | undefined): number | null {
+  if (!fecha) return null;
+  const iso = toLocalISO(parseLocalDate(fecha) ?? new Date(fecha));
+  const idx = periodos.findIndex((p) => toLocalISO(p) === iso);
+  return idx >= 0 ? idx : null;
+}
+
 function getRowStatus(l: LocatarioConProps): "sin-fechas" | "vence" | "actualiza" | "ok" {
   if (l.locatario_propiedades.length === 0) return "sin-fechas";
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -404,15 +411,16 @@ export default function Locatarios() {
     setPropForms(l.locatario_propiedades.map((lp) => {
       const periodos = getPeriodos(lp.fecha_inicio ?? "", lp.fecha_fin ?? null, lp.intervalo_ajuste_meses ?? 3);
       const currentIdx = getCurrentPeriodoIdx(periodos);
+      const activeIdx = getPeriodoIdxByDate(periodos, lp.fecha_ultimo_ajuste) ?? currentIdx;
       const histProp = (hist ?? []).filter((h: any) => h.propiedad_id === lp.propiedad_id);
       const pending: Record<number, number> = {};
-      // Los pasados: 0..currentIdx-1 desde historial (en orden).
-      for (let i = 0; i < currentIdx; i++) {
-        const h = histProp[i];
-        if (h) pending[i] = Number(h.monto);
+      // Historial por fecha de período: evita que un monto futuro se muestre en el período vigente.
+      for (const h of histProp) {
+        const hIdx = getPeriodoIdxByDate(periodos, h.fecha_desde);
+        if (hIdx !== null) pending[hIdx] = Number(h.monto);
       }
-      // El actual = monto_base.
-      pending[currentIdx] = Number(lp.monto_base);
+      // El monto base activo va en el período donde se guardó el último ajuste, aunque sea futuro.
+      pending[activeIdx] = Number(lp.monto_base);
       return {
         propiedad_id: lp.propiedad_id,
         fecha_inicio: lp.fecha_inicio ?? "",
@@ -710,7 +718,7 @@ export default function Locatarios() {
                         return (
                           <div className="mt-2">
                             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Plan de ajustes ({periodos.length} períodos)</p>
-                            <p className="text-[11px] text-muted-foreground mb-2">El monto del período actual será el utilizado para generar los recibos.</p>
+                            <p className="text-[11px] text-muted-foreground mb-2">El último casillero completado será el monto utilizado para generar los recibos.</p>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                               {periodos.map((fecha, pIdx) => {
                                 const isPast = pIdx < currentIdx;
