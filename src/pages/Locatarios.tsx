@@ -798,15 +798,42 @@ export default function Locatarios() {
               </div>
               </div>
 
-            <div className="px-6 py-4 border-t border-border flex items-center justify-between">
+            <div className="px-6 py-4 border-t border-border flex items-center justify-between flex-wrap gap-2">
               {!isNew && (
-                <button
-                  onClick={() => setConfirmDelete(true)}
-                  disabled={deleteLocatario.isPending}
-                  className="flex items-center gap-1.5 text-sm text-destructive hover:bg-destructive/10 px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  <Trash2 className="w-4 h-4" />Eliminar
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setConfirmDelete(true)}
+                    disabled={deleteLocatario.isPending}
+                    className="flex items-center gap-1.5 text-sm text-destructive hover:bg-destructive/10 px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    <Trash2 className="w-4 h-4" />Eliminar
+                  </button>
+                  {(() => {
+                    // Mostrar "Renovar" si algún contrato está vencido o vence en ≤ 30 días
+                    const today = new Date(); today.setHours(0, 0, 0, 0);
+                    const in30 = new Date(today); in30.setDate(in30.getDate() + 30);
+                    const puedeRenovar = editing?.locatario_propiedades.some((lp) => {
+                      if (!lp.fecha_fin) return false;
+                      const fin = new Date(lp.fecha_fin); fin.setHours(0, 0, 0, 0);
+                      return fin <= in30;
+                    });
+                    if (!puedeRenovar) return null;
+                    return (
+                      <button
+                        onClick={() => {
+                          if (confirm("¿Enviar solicitud de RENOVACIÓN? Al aprobarse, se limpiarán todas las fechas, montos y períodos. Se mantendrán datos personales y propiedad asignada.")) {
+                            renovarContrato.mutate();
+                          }
+                        }}
+                        disabled={renovarContrato.isPending}
+                        className="flex items-center gap-1.5 text-sm text-amber-700 border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                        {renovarContrato.isPending ? "Enviando..." : "Renovar contrato"}
+                      </button>
+                    );
+                  })()}
+                </div>
               )}
               <div className="flex gap-2 ml-auto">
                 <button onClick={() => setEditing(null)} className="px-4 py-2 rounded-lg text-sm border border-border hover:bg-secondary transition-colors">
@@ -817,10 +844,11 @@ export default function Locatarios() {
                   disabled={saveLocatario.isPending || !form.nombre.trim()}
                   className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
-                  {saveLocatario.isPending ? "Guardando..." : "Guardar"}
+                  {saveLocatario.isPending ? "Guardando..." : isNew ? "Guardar" : "Enviar a aprobación"}
                 </button>
               </div>
             </div>
+
           </div>
         </div>
       )}
