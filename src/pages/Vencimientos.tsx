@@ -224,7 +224,7 @@ export default function Vencimientos() {
               <img src="/logo.png" alt="Logo" className="lp-logo" />
               <div className="lp-title">
                 <h1>VENCIMIENTOS Y ACTUALIZACIONES</h1>
-                <p>Próximos 20 días — Generado el {todayStr}</p>
+                <p>Próximo mes — Generado el {todayStr}</p>
               </div>
             </div>
 
@@ -271,7 +271,7 @@ export default function Vencimientos() {
             <div>
               <h1 className="text-2xl font-bold text-foreground">Vencimientos / Actualización</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Contratos con vencimiento o actualización en los próximos 20 días.
+                Contratos con vencimiento o actualización en los próximo mes calendario.
               </p>
             </div>
             <button
@@ -290,7 +290,7 @@ export default function Vencimientos() {
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
               </div>
             ) : rows.length === 0 ? (
-              <div className="py-12 text-center text-sm text-muted-foreground">Sin vencimientos ni actualizaciones en los próximos 20 días</div>
+              <div className="py-12 text-center text-sm text-muted-foreground">Sin vencimientos ni actualizaciones en los próximo mes calendario</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
