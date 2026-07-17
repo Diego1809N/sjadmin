@@ -12,33 +12,43 @@ import ActualizarMontos from "@/pages/ActualizarMontos";
 import Servicios from "@/pages/Servicios";
 import Contratos from "@/pages/Contratos";
 import Vencimientos from "@/pages/Vencimientos";
+import Aprobaciones from "@/pages/Aprobaciones";
 import { Loader2 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
+
+type Role = "admin" | "superadmin" | null;
 
 export default function Index() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [page, setPage] = useState("dashboard");
+  const [role, setRole] = useState<Role>(() => {
+    const r = localStorage.getItem("app_role");
+    return r === "admin" || r === "superadmin" ? r : null;
+  });
 
   useEffect(() => {
-    // Get current session
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
     });
-
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
+      if (!sess) {
+        setRole(null);
+      } else {
+        const r = localStorage.getItem("app_role");
+        setRole(r === "admin" || r === "superadmin" ? r : "admin");
+      }
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
   const handleLogout = async () => {
+    localStorage.removeItem("app_role");
+    setRole(null);
     await supabase.auth.signOut();
     setPage("dashboard");
   };
 
-  // Loading state while checking auth
   if (session === undefined) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -49,6 +59,11 @@ export default function Index() {
 
   if (!session) {
     return <Login onLogin={() => {}} />;
+  }
+
+  // Superadmin: sólo el panel de aprobaciones, sin sidebar ni resto de la app
+  if (role === "superadmin") {
+    return <Aprobaciones onLogout={handleLogout} />;
   }
 
   const renderPage = () => {

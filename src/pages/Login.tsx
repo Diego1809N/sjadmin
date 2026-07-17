@@ -18,10 +18,16 @@ export default function Login({ onLogin }: LoginProps) {
     e.preventDefault();
     setError("");
 
-    if (usuario !== "admin" || clave !== "admin") {
+    let role: "admin" | "superadmin" | null = null;
+    if (usuario === "admin" && clave === "admin") role = "admin";
+    else if (usuario === "superadmin" && clave === "superadmin") role = "superadmin";
+
+    if (!role) {
       setError("Usuario o contraseña incorrectos.");
       return;
     }
+
+    localStorage.setItem("app_role", role);
 
     setLoading(true);
     const { error: err } = await supabase.auth.signInWithPassword({
@@ -37,7 +43,6 @@ export default function Login({ onLogin }: LoginProps) {
         password: ADMIN_PASSWORD,
       });
       if (!signUpErr) {
-        // Try login again after signup
         setLoading(true);
         const { error: retryErr } = await supabase.auth.signInWithPassword({
           email: ADMIN_EMAIL,
@@ -51,6 +56,7 @@ export default function Login({ onLogin }: LoginProps) {
     }
     // onLogin() not needed — Index.tsx listens to onAuthStateChange
   };
+
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
