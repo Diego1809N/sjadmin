@@ -586,14 +586,20 @@ export default function Locatarios() {
                         {l.nombre.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <p className="text-sm font-medium text-foreground flex items-center gap-2 flex-wrap">
                           {l.nombre}
                           {s.label && (
                             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${s.badgeBg} ${s.badgeText}`}>
                               {s.label}
                             </span>
                           )}
+                          {pendingByLoc[l.id] && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-amber-500/15 text-amber-700 inline-flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> Cambio pendiente
+                            </span>
+                          )}
                         </p>
+
                         <p className="text-xs text-muted-foreground">{l.email ?? ""}</p>
                       </div>
                     </div>
