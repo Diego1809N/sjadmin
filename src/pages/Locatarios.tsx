@@ -265,130 +265,153 @@ export default function Locatarios() {
     },
   });
 
+  // ─── Cambios pendientes por locatario (badge "Cambio pendiente") ─────────
+  const { data: pendingByLoc = {} } = useQuery({
+    queryKey: ["cambios-pendientes-locatarios"],
+    queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase as any)
+        .from("cambios_pendientes")
+        .select("id, tipo, entidad_id")
+        .eq("estado", "pendiente")
+        .eq("entidad_tabla", "locatarios");
+      const map: Record<string, { count: number; tipos: string[] }> = {};
+      for (const r of (data ?? []) as { id: string; tipo: string; entidad_id: string }[]) {
+        if (!r.entidad_id) continue;
+        if (!map[r.entidad_id]) map[r.entidad_id] = { count: 0, tipos: [] };
+        map[r.entidad_id].count += 1;
+        map[r.entidad_id].tipos.push(r.tipo);
+      }
+      return map;
+    },
+    refetchInterval: 15000,
+  });
+
   // ─── Mutations ─────────────────────────────────────────────────────────────
   const saveLocatario = useMutation({
     mutationFn: async () => {
-      let locId = editing?.id;
-
+      // Alta de un locatario nuevo: se aplica directo (no requiere aprobación)
       if (isNew) {
         const { data, error } = await supabase
           .from("locatarios")
-          .insert({ nombre: form.nombre, dni: form.dni || null, telefono: form.telefono || null, email: form.email || null, notas: form.notas || null, monto_base: 0 })
+          .insert({
+            nombre: form.nombre,
+            dni: form.dni || null,
+            telefono: form.telefono || null,
+            email: form.email || null,
+            notas: form.notas || null,
+            monto_base: 0,
+          })
           .select("id")
           .single();
         if (error) throw error;
-        locId = data.id;
-      } else if (locId) {
-        const { error } = await supabase
-          .from("locatarios")
-          .update({ nombre: form.nombre, dni: form.dni || null, telefono: form.telefono || null, email: form.email || null, notas: form.notas || null })
-          .eq("id", locId);
-        if (error) throw error;
+        const locId = data.id;
 
-        // Remove deleted relations
-        if (removedLpIds.length > 0) {
-          const { error: delErr } = await supabase.from("locatario_propiedades").delete().in("id", removedLpIds);
-          if (delErr) throw delErr;
-        }
-      }
-
-      if (!locId) return;
-
-      // Upsert property relations
-      for (const pf of propForms) {
-        if (!pf.propiedad_id) continue;
-        const existingLp = editing?.locatario_propiedades.find((lp) => lp.propiedad_id === pf.propiedad_id);
-
-        const periodos = getPeriodos(pf.fecha_inicio, pf.fecha_fin || null, pf.intervalo_ajuste_meses);
-        const currentIdx = getCurrentPeriodoIdx(periodos);
-        // El período "activo" es el último casillero completado (aunque sea futuro).
-        // Así, si el usuario carga el monto del próximo período días antes, se guarda igual.
-        let activeIdx = currentIdx;
-        if (periodos.length > 0) {
-          for (let i = periodos.length - 1; i >= 0; i--) {
-            const v = Number(pf.pending_ajustes?.[i] ?? 0);
-            if (v > 0) { activeIdx = Math.max(currentIdx, i); break; }
-          }
-        }
-        const montoActual = periodos.length === 0
-          ? Number(pf.monto_base) || 0
-          : Number(pf.pending_ajustes?.[activeIdx] ?? pf.monto_base) || 0;
-        const fechaUltimoAjuste = periodos[activeIdx] ? toLocalISO(periodos[activeIdx]) : null;
-
-        if (existingLp && !isNew) {
-          // Reescribir historial para esta propiedad+locatario: borrar y reinsertar los previos al activo.
-          await supabase
-            .from("historial_precios")
-            .delete()
-            .eq("locatario_id", locId!)
-            .eq("propiedad_id", pf.propiedad_id);
-
-          for (let i = 0; i < activeIdx; i++) {
-            const monto = Number(pf.pending_ajustes?.[i] ?? 0);
-            if (!monto) continue;
-            const fechaDesde = periodos[i] ? toLocalISO(periodos[i]) : null;
-            const fechaHasta = periodos[i + 1] ? toLocalISO(periodos[i + 1]) : null;
-            await supabase.from("historial_precios").insert({
-              locatario_id: locId!,
-              propiedad_id: pf.propiedad_id,
-              monto,
-              fecha_desde: fechaDesde,
-              fecha_hasta: fechaHasta,
-            });
-          }
-
-
-          const { error } = await supabase.from("locatario_propiedades").update({
-            fecha_inicio: pf.fecha_inicio || null,
-            fecha_fin: pf.fecha_fin || null,
-            monto_base: montoActual,
-            intervalo_ajuste_meses: pf.intervalo_ajuste_meses,
-            indice_actualizacion: pf.indice_actualizacion,
-            notas: pf.notas || null,
-            fecha_ultimo_ajuste: fechaUltimoAjuste,
-          }).eq("id", existingLp.id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase.from("locatario_propiedades").insert({
+        // Insertar propiedades iniciales directo (creación inicial)
+        for (const pf of propForms) {
+          if (!pf.propiedad_id) continue;
+          const { error: err } = await supabase.from("locatario_propiedades").insert({
             locatario_id: locId,
             propiedad_id: pf.propiedad_id,
             fecha_inicio: pf.fecha_inicio || null,
             fecha_fin: pf.fecha_fin || null,
-            monto_base: montoActual || pf.monto_base,
-            intervalo_ajuste_meses: pf.intervalo_ajuste_meses,
-            indice_actualizacion: pf.indice_actualizacion,
+            monto_base: Number(pf.monto_base) || 0,
+            intervalo_ajuste_meses: pf.intervalo_ajuste_meses || null,
+            indice_actualizacion: pf.indice_actualizacion || null,
             notas: pf.notas || null,
-            fecha_ultimo_ajuste: fechaUltimoAjuste,
           });
-          if (error) throw error;
+          if (err) throw err;
         }
+        return { pending: false as const };
       }
+
+      // Edición: se envía a aprobación del superadmin
+      if (!editing?.id) return { pending: false as const };
+
+      const payloadPropForms: PropFormPayload[] = propForms.map((pf) => {
+        const existingLp = editing.locatario_propiedades.find((lp) => lp.propiedad_id === pf.propiedad_id);
+        return {
+          id: existingLp?.id,
+          propiedad_id: pf.propiedad_id,
+          fecha_inicio: pf.fecha_inicio,
+          fecha_fin: pf.fecha_fin,
+          monto_base: pf.monto_base,
+          intervalo_ajuste_meses: pf.intervalo_ajuste_meses,
+          indice_actualizacion: pf.indice_actualizacion,
+          notas: pf.notas,
+          pending_ajustes: pf.pending_ajustes,
+        };
+      });
+
+      await enqueueChange({
+        tipo: "editar_locatario",
+        entidad_tabla: "locatarios",
+        entidad_id: editing.id,
+        descripcion: `Editar datos de ${form.nombre}`,
+        payload: {
+          locatario_id: editing.id,
+          form,
+          propForms: payloadPropForms,
+          removedLpIds,
+        },
+      });
+      return { pending: true as const };
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["locatarios"] });
       qc.invalidateQueries({ queryKey: ["propiedades"] });
       qc.invalidateQueries({ queryKey: ["historial-precios"] });
+      qc.invalidateQueries({ queryKey: ["cambios-pendientes-locatarios"] });
+      if (res?.pending) {
+        toast.success("Cambio enviado a aprobación del superadmin");
+      } else {
+        toast.success("Guardado");
+      }
       setEditing(null);
     },
+    onError: (e: Error) => toast.error("Error al guardar: " + e.message),
   });
 
   const deleteLocatario = useMutation({
     mutationFn: async (id: string) => {
-      // locatario_propiedades are deleted automatically via ON DELETE CASCADE
-      const { error } = await supabase.from("locatarios").delete().eq("id", id);
-      if (error) throw error;
+      if (!editing) return;
+      await enqueueChange({
+        tipo: "eliminar_locatario",
+        entidad_tabla: "locatarios",
+        entidad_id: id,
+        descripcion: `Eliminar locatario: ${editing.nombre}`,
+        payload: { locatario_id: id },
+      });
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["locatarios"] });
-      qc.invalidateQueries({ queryKey: ["stat-locatarios"] });
-      qc.invalidateQueries({ queryKey: ["stat-propiedades"] });
-      qc.invalidateQueries({ queryKey: ["propiedades"] });
-      qc.invalidateQueries({ queryKey: ["propiedades-list"] });
+      qc.invalidateQueries({ queryKey: ["cambios-pendientes-locatarios"] });
+      toast.success("Eliminación enviada a aprobación del superadmin");
       setEditing(null);
     },
+    onError: (e: Error) => toast.error("Error: " + e.message),
+  });
+
+  const renovarContrato = useMutation({
+    mutationFn: async () => {
+      if (!editing?.id) return;
+      await enqueueChange({
+        tipo: "renovar_contrato",
+        entidad_tabla: "locatarios",
+        entidad_id: editing.id,
+        descripcion: `Renovar contrato de ${editing.nombre}`,
+        payload: { locatario_id: editing.id, locatario_nombre: editing.nombre },
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["cambios-pendientes-locatarios"] });
+      toast.success("Renovación enviada a aprobación. Una vez aprobada, podrás completar los datos nuevos.");
+      setEditing(null);
+    },
+    onError: (e: Error) => toast.error("Error: " + e.message),
   });
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
+
   const upcoming = getUpcomingAdjustments(locatarios);
 
   const filtered = useMemo(() => {
