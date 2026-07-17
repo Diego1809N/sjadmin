@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      cambios_pendientes: {
+        Row: {
+          creado_por: string | null
+          created_at: string
+          descripcion: string
+          entidad_id: string | null
+          entidad_tabla: string
+          estado: string
+          id: string
+          motivo_rechazo: string | null
+          payload: Json
+          resolved_at: string | null
+          resuelto_por: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          creado_por?: string | null
+          created_at?: string
+          descripcion: string
+          entidad_id?: string | null
+          entidad_tabla: string
+          estado?: string
+          id?: string
+          motivo_rechazo?: string | null
+          payload?: Json
+          resolved_at?: string | null
+          resuelto_por?: string | null
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          creado_por?: string | null
+          created_at?: string
+          descripcion?: string
+          entidad_id?: string | null
+          entidad_tabla?: string
+          estado?: string
+          id?: string
+          motivo_rechazo?: string | null
+          payload?: Json
+          resolved_at?: string | null
+          resuelto_por?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contratos: {
         Row: {
           created_at: string
