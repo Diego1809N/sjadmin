@@ -138,12 +138,24 @@ export default function Contratos() {
     if (data) generarWord(data as Contrato);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("¿Eliminar este contrato?")) return;
-    const { error } = await supabase.from("contratos").delete().eq("id", id);
-    if (error) toast.error("Error al eliminar");
-    else { toast.success("Contrato eliminado"); cargar(); }
+  const handleDelete = async (c: Contrato) => {
+    if (!confirm("¿Enviar solicitud de eliminación de este contrato al superadmin?")) return;
+    try {
+      const { enqueueChange } = await import("@/lib/aprobaciones");
+      await enqueueChange({
+        tipo: "eliminar_contrato",
+        entidad_tabla: "contratos",
+        entidad_id: c.id,
+        descripcion: `Eliminar contrato de ${c.locatario_nombre} — ${c.propiedad_direccion}`,
+        payload: { contrato_id: c.id },
+      });
+      toast.success("Eliminación enviada a aprobación del superadmin");
+    } catch (e) {
+      toast.error("No se pudo enviar a aprobación");
+      console.error(e);
+    }
   };
+
 
   const generarWord = (c: Contrato) => {
     const tipoLabel = TIPOS.find(t => t.value === c.tipo)?.label || c.tipo;
@@ -335,9 +347,10 @@ export default function Contratos() {
                       <Button size="sm" variant="outline" onClick={() => generarWord(c)}>
                         <Download className="w-4 h-4" /> Word
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => handleDelete(c.id)}>
+                      <Button size="sm" variant="ghost" onClick={() => handleDelete(c)}>
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
+
                     </TableCell>
                   </TableRow>
                 ))}
