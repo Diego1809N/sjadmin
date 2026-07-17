@@ -3,9 +3,11 @@ import { getPeriodos, getCurrentPeriodoIdx, toLocalISO } from "./periodos";
 
 export type CambioTipo =
   | "editar_locatario"
+  | "eliminar_locatario"
   | "renovar_contrato"
   | "editar_contrato"
   | "eliminar_contrato";
+
 
 export type PropFormPayload = {
   id?: string; // existing locatario_propiedades id (undefined = nueva relación)
@@ -87,6 +89,9 @@ export async function approveChange(row: CambioPendienteRow) {
     case "editar_locatario":
       await applyEditarLocatario(row.payload as EditarLocatarioPayload);
       break;
+    case "eliminar_locatario":
+      await applyEliminarLocatario(row.payload as { locatario_id: string });
+      break;
     case "renovar_contrato":
       await applyRenovar(row.payload as RenovarPayload);
       break;
@@ -97,6 +102,7 @@ export async function approveChange(row: CambioPendienteRow) {
       await applyEliminarContrato(row.payload as EliminarContratoPayload);
       break;
   }
+
   const { error } = await sb
     .from("cambios_pendientes")
     .update({
@@ -267,3 +273,9 @@ async function applyEliminarContrato(p: EliminarContratoPayload) {
   const { error } = await supabase.from("contratos").delete().eq("id", p.contrato_id);
   if (error) throw error;
 }
+
+async function applyEliminarLocatario(p: { locatario_id: string }) {
+  const { error } = await supabase.from("locatarios").delete().eq("id", p.locatario_id);
+  if (error) throw error;
+}
+
