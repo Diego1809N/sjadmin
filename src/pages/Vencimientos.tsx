@@ -77,7 +77,8 @@ function buildRows(locatarios: Loc[], historial: Hist[]): Row[] {
     lps.forEach((lp) => {
       const locadorNom = lp.propiedades?.locadores?.nombre ?? "—";
       const propNom = lp.propiedades?.direccion ?? "—";
-      const ultimo = lastMonto.get(loc.id) ?? (Number(lp.monto_base) || 0);
+      // El monto vigente vive en lp.monto_base (historial_precios sólo guarda períodos pasados).
+      const ultimo = Number(lp.monto_base) || lastMonto.get(loc.id) || 0;
       const indice = lp.indice_actualizacion ?? "—";
       const intervalo = lp.intervalo_ajuste_meses ?? null;
 
